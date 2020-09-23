@@ -12,6 +12,14 @@ public class LOC_Analyzer {
     private double classe_DC;
     private double methode_DC;
 
+    // Liste de patterns regex
+    private final Pattern patternJavaFile = Pattern.compile(".java$", Pattern.CASE_INSENSITIVE);
+    private final Pattern patternMultiLineComment = Pattern.compile("(^.*/\\*|^/\\*)(.*|.*(\\r\\n|\\r|\\n).*)\\*/.*");
+    private final Pattern patternJavaDoc = Pattern.compile("(^.*/\\*\\*|^/\\*\\*)(.*|.*\n.*)\\*/.*");
+    private final Pattern patternSingleLineComment = Pattern.compile("(^.*//|^//).*\n");
+    private final Pattern blankLine = Pattern.compile("^\\s*$|(^(\\r\\n|\\r|\\n))|((\\r\\n|\\r|\\n)$)", Pattern.MULTILINE);
+
+
     public static void main(String[] args) {
 
     }
@@ -24,8 +32,7 @@ public class LOC_Analyzer {
         File directory = new File(System.getProperty("user.dir"));
         ArrayList<File> fileList = new ArrayList<>();
         for(File file : Objects.requireNonNull(directory.listFiles())){
-            Pattern pattern = Pattern.compile(".java$", Pattern.CASE_INSENSITIVE);
-            Matcher matcher = pattern.matcher(file.getName());
+            Matcher matcher = patternJavaFile.matcher(file.getName());
             if(matcher.find()){
                 fileList.add(file);
             }
