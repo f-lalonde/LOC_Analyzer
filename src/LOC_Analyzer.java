@@ -13,12 +13,33 @@ public class LOC_Analyzer {
     private double methode_DC;
 
     // Liste de patterns regex
+
+    // Patron(s) pour fichier(s)
     private final Pattern patternJavaFile = Pattern.compile(".java$", Pattern.CASE_INSENSITIVE);
+
+    // Patrons pour commentaires et lignes vides
     private final Pattern patternMultiLineComment = Pattern.compile("(^.*/\\*|^/\\*)(.*|.*(\\r\\n|\\r|\\n).*)\\*/.*");
     private final Pattern patternJavaDoc = Pattern.compile("(^.*/\\*\\*|^/\\*\\*)(.*|.*\n.*)\\*/.*");
     private final Pattern patternSingleLineComment = Pattern.compile("(^.*//|^//).*\n");
     private final Pattern blankLine = Pattern.compile("^\\s*$|(^(\\r\\n|\\r|\\n))|((\\r\\n|\\r|\\n)$)", Pattern.MULTILINE);
 
+    // Patrons pour classes et méthodes
+    private final Pattern classPattern = Pattern.compile(
+            "\\s*((public|protected|default|private)?\\s+)?" +
+            "class\\s+[a-zA-Z_$][a-zA-Z0-9_$]*\\s*\\{", Pattern.CASE_INSENSITIVE);
+            // à partir d'ici il faut compter les {} pour arriver à quelque chose d'équilibré.
+
+    private final Pattern methodPattern = Pattern.compile(
+            "\\s*((public|protected|default|private)\\s+)?" +
+            "(static\\s+)?" +
+            "[a-zA-Z_$][a-zA-Z0-9_$]*\\s+" +
+            "[a-zA-Z_$][a-zA-Z0-9_$]*\\s*" +
+            "\\((([a-zA-Z_$][a-zA-Z0-9_$]*(\\[])*\\s+[a-zA-Z_$][a-zA-Z0-9_$]*,)*\\s*" +
+            "([a-zA-Z_$][a-zA-Z0-9_$]*(\\[])*\\s+[a-zA-Z_$][a-zA-Z0-9_$]*))?\\)\\{");
+            // à partir d'ici, il faut compter les {} pour arriver à quelque chose d'équilibré.
+
+    // Patrons misc
+    private final Pattern javaNamingConvention = Pattern.compile("[a-zA-Z_$][a-zA-Z0-9_$]*");
 
     public static void main(String[] args) {
 
