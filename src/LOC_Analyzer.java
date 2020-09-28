@@ -1,6 +1,8 @@
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.Objects;
+import java.util.Scanner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -61,8 +63,24 @@ public class LOC_Analyzer {
         return fileList;
     }
 
-    private void ReadFile(File file){
+    private void FindBalancedCurlyBracket(File file) throws FileNotFoundException {
+        Scanner scanner = new Scanner(file);
+        String currentWord;
+        char currentChar;
+        while(scanner.hasNext()){
+            currentWord = scanner.next();
+            for(int i = 0; i<currentWord.length(); ++i){
+                currentChar = currentWord.charAt(i);
+                if(MatchChar(currentChar, '{')){
+                    //do something
+                }
+            }
+        }
 
+    }
+
+    private boolean MatchChar(char currentChar, char charToMatch){
+        return charToMatch == currentChar;
     }
 
 
