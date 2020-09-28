@@ -6,6 +6,11 @@ import java.util.Scanner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+// deux façons de faire que je peux voir :
+// 1. Lire ligne par ligne, et anticiper les possibles whitespace dans les regex (option actuellement implémenté)
+// 2. Éliminer le whitespace, tout mettre en un gros bloc mais en préservant les \n et \r, utiliser ceux-ci pour compter les lignes de codes.
+//    Plus besoin d'anticiper le whitespace.
+
 public class LOC_Analyzer {
     private int classe_LOC = 0;
     private int methode_LOC = 0;
@@ -22,6 +27,8 @@ public class LOC_Analyzer {
     // Patrons pour commentaires et lignes vides
     private final Pattern patternMultiLineComment = Pattern.compile("(^.*/\\*|^/\\*)(.*|.*(\\r\\n|\\r|\\n).*)\\*/.*");
     private final Pattern patternJavaDoc = Pattern.compile("(^.*/\\*\\*|^/\\*\\*)(.*|.*\n.*)\\*/.*");
+    // si on lit le fichier ligne par ligne, on va devoir séparer ces regex ↑↑↑ en deux : début, fin, et compter entre les deux.
+
     private final Pattern patternSingleLineComment = Pattern.compile("(^.*//|^//).*\n");
     private final Pattern blankLine = Pattern.compile("^\\s*$|(^(\\r\\n|\\r|\\n))|((\\r\\n|\\r|\\n)$)", Pattern.MULTILINE);
 
