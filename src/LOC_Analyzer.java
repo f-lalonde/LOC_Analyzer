@@ -21,24 +21,12 @@ public class LOC_Analyzer {
 
     // Liste de patterns regex
 
-    // Patron(s) pour fichier(s)
-    private final Pattern patternJavaFile = Pattern.compile(".java$", Pattern.CASE_INSENSITIVE);
-
-    // Patrons pour commentaires et lignes vides. Assume une lecture ligne par ligne du fichier.
-
-        // détecte /* avec quoi que ce soit avant.
     private final Pattern patternMultiLineCommentStart = Pattern.compile("(^.*/\\*|^/\\*)");
-
-        // détecte */ avec quoi que ce soit avant.
     private final Pattern patternMultiLineEnd = Pattern.compile(".*\\*/");
+    private final Pattern patternJavaDocStart = Pattern.compile("(^.*/\\*\\*|^/\\*\\*)"); // même "End" que MultiLine
 
-        // détecte \** avec quoi que ce soit avant. (utise le même "End" que MultiLine)
-    private final Pattern patternJavaDocStart = Pattern.compile("(^.*/\\*\\*|^/\\*\\*)");
-
-        // détecte // avec quoi que ce soit avant.
     private final Pattern patternSingleLineComment = Pattern.compile("^.*//|^//");
 
-        // détecte un string composé d'espace vide et se terminant soit par un espace, soit par un caractère de retour
     //todo : incertain de ce regex
     private final Pattern blankLine = Pattern.compile("^\\s*$|(^(\\r\\n|\\r|\\n))|((\\r\\n|\\r|\\n)$)");
 
@@ -60,47 +48,24 @@ public class LOC_Analyzer {
     // Patrons misc
     private final Pattern javaNamingConvention = Pattern.compile("[a-zA-Z_$][a-zA-Z0-9_$]*");
 
+    private ArrayList<String> FileContentLineByLine(File file) throws FileNotFoundException {
+        Scanner scanner = new Scanner(file);
+        ArrayList<String> javaFileContent = new ArrayList<>();
+        while(scanner.hasNext()){
+            javaFileContent.add(scanner.nextLine());
+        }
+        return javaFileContent;
+    }
+
+
+
+    private void FindBalancedCurlyBracket() {
+
+    }
+
+
     public static void main(String[] args) {
 
     }
-
-    /**
-     * Cherche tous les fichiers qui se termine par ".java" dans le dossier où le programme est exécuté.
-     * @return un ArrayList de tous les fichiers répondant au critrère ci-haut.
-     */
-    private ArrayList<File> ListJavaFilesInDirectory() {
-        File directory = new File(System.getProperty("user.dir"));
-        ArrayList<File> fileList = new ArrayList<>();
-        for(File file : Objects.requireNonNull(directory.listFiles())){
-            Matcher matcher = patternJavaFile.matcher(file.getName());
-            if(matcher.find()){
-                fileList.add(file);
-            }
-        }
-        return fileList;
-    }
-
-    private void FindBalancedCurlyBracket(File file) throws FileNotFoundException {
-        Scanner scanner = new Scanner(file);
-        String currentWord;
-        char currentChar;
-        while(scanner.hasNext()){
-            currentWord = scanner.next();
-            for(int i = 0; i<currentWord.length(); ++i){
-                currentChar = currentWord.charAt(i);
-                if(MatchChar(currentChar, '{')){
-                    //do something
-                }
-            }
-        }
-
-    }
-
-    private boolean MatchChar(char currentChar, char charToMatch){
-        return charToMatch == currentChar;
-    }
-
-
-
 
 }
