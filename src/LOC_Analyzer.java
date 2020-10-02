@@ -24,13 +24,23 @@ public class LOC_Analyzer {
     // Patron(s) pour fichier(s)
     private final Pattern patternJavaFile = Pattern.compile(".java$", Pattern.CASE_INSENSITIVE);
 
-    // Patrons pour commentaires et lignes vides
-    private final Pattern patternMultiLineComment = Pattern.compile("(^.*/\\*|^/\\*)(.*|.*(\\r\\n|\\r|\\n).*)\\*/.*");
-    private final Pattern patternJavaDoc = Pattern.compile("(^.*/\\*\\*|^/\\*\\*)(.*|.*\n.*)\\*/.*");
-    // si on lit le fichier ligne par ligne, on va devoir séparer ces regex ↑↑↑ en deux : début, fin, et compter entre les deux.
+    // Patrons pour commentaires et lignes vides. Assume une lecture ligne par ligne du fichier.
 
-    private final Pattern patternSingleLineComment = Pattern.compile("(^.*//|^//).*\n");
-    private final Pattern blankLine = Pattern.compile("^\\s*$|(^(\\r\\n|\\r|\\n))|((\\r\\n|\\r|\\n)$)", Pattern.MULTILINE);
+        // détecte /* avec quoi que ce soit avant.
+    private final Pattern patternMultiLineCommentStart = Pattern.compile("(^.*/\\*|^/\\*)");
+
+        // détecte */ avec quoi que ce soit avant.
+    private final Pattern patternMultiLineEnd = Pattern.compile(".*\\*/");
+
+        // détecte \** avec quoi que ce soit avant. (utise le même "End" que MultiLine)
+    private final Pattern patternJavaDocStart = Pattern.compile("(^.*/\\*\\*|^/\\*\\*)");
+
+        // détecte // avec quoi que ce soit avant.
+    private final Pattern patternSingleLineComment = Pattern.compile("^.*//|^//");
+
+        // détecte un string composé d'espace vide et se terminant soit par un espace, soit par un caractère de retour
+    //todo : incertain de ce regex
+    private final Pattern blankLine = Pattern.compile("^\\s*$|(^(\\r\\n|\\r|\\n))|((\\r\\n|\\r|\\n)$)");
 
     // Patrons pour classes et méthodes
     private final Pattern classPattern = Pattern.compile(
