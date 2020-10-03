@@ -36,7 +36,7 @@ public class LOC_Analyzer {
     // Patrons pour classes et méthodes
     private final Pattern classPattern = Pattern.compile(
             "((public|protected|default|private)?\\s+)?" +
-            "class\\s+[a-zA-Z_$][a-zA-Z0-9_$]*\\s*\\{", Pattern.CASE_INSENSITIVE);
+            "class\\s+[a-zA-Z_$][a-zA-Z0-9_$]*\\s+((extends|implements)\\s+[a-zA-Z_$][a-zA-Z0-9_$]*\\s+)?\\{", Pattern.CASE_INSENSITIVE);
             // à partir d'ici il faut compter les {} pour arriver à quelque chose d'équilibré.
 
     private final Pattern methodPattern = Pattern.compile(
@@ -45,7 +45,7 @@ public class LOC_Analyzer {
             "[a-zA-Z_$][a-zA-Z0-9_$]*\\s+" +
             "[a-zA-Z_$][a-zA-Z0-9_$]*\\s*" +
             "\\((([a-zA-Z_$][a-zA-Z0-9_$]*(\\[])*\\s+[a-zA-Z_$][a-zA-Z0-9_$]*,)*\\s*" +
-            "([a-zA-Z_$][a-zA-Z0-9_$]*(\\[])*\\s+[a-zA-Z_$][a-zA-Z0-9_$]*))?\\)\\{");
+            "([a-zA-Z_$][a-zA-Z0-9_$]*(\\[])*\\s+[a-zA-Z_$][a-zA-Z0-9_$]*))?\\)\\{", Pattern.CASE_INSENSITIVE);
             // à partir d'ici, il faut compter les {} pour arriver à quelque chose d'équilibré.
 
     // Patrons misc
@@ -63,6 +63,11 @@ public class LOC_Analyzer {
                ce qu'il contient, puis on vérifie ce qu'il reste. */
 
             String line = fileLines.get(i);
+
+            Matcher classMatcher = classPattern.matcher(line);
+            if(classMatcher.find()){
+                Classe classe = new Classe(classMatcher.group().replaceAll(".*class\\s+", "").split(" ")[0]);
+            }
 
             Matcher importMatch = importPattern.matcher(line);
             Matcher mlCommentOneLine = patternMultiLineCommentonOneLine.matcher(line);
