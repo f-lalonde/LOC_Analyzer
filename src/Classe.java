@@ -1,19 +1,22 @@
-import java.util.ArrayList;
+import java.util.HashMap;
 
 public class Classe extends Methode {
 
-    private ArrayList<Methode> class_methods;
+    private final HashMap<String, Methode> class_methods= new HashMap<>();
 
-    public Classe(String name){
-        super(name);
-        this.class_methods = new ArrayList<>();
+    public Classe(String name, int start, int end){
+        super(name, start, end);
     }
 
-    public void addMethod(Methode methode){
-        class_methods.add(methode);
+    public void addMethod(String methodName, Methode methode){
+        class_methods.put(methodName, methode);
     }
 
-    public ArrayList<Methode> getClass_methods() {
+    public HashMap<String, Methode> getClass_methods() {
         return class_methods;
+    }
+
+    public Methode getClassMethod(String name) {
+        return class_methods.get(name);
     }
 }
