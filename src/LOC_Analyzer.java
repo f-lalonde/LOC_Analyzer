@@ -18,17 +18,38 @@ public class LOC_Analyzer {
     private double classe_DC;
     private double methode_DC;
 
+    private ArrayList<String> fileLines;
+    private int javadocLines = 0;
+    private int importLines = 0;
     // Misc
     private int import_lines_in_file = 0;
 
-    // Patrons misc
+    // Patrons regex
     private final Pattern javaNamingConvention = Pattern.compile("[a-zA-Z_$][a-zA-Z0-9_$]*");
 
-    public LOC_Analyzer(ArrayList<String> fileLines){
+    Pattern classPattern = Pattern.compile(
+            "((public|protected|default|private)?\\s+)?" + "class\\s+[a-zA-Z_$][a-zA-Z0-9_$]*\\s+" +
+                    "((extends|implements)\\s+[a-zA-Z_$][a-zA-Z0-9_$]*\\s+)?\\{", Pattern.CASE_INSENSITIVE);
+    // à partir d'ici il faut compter les {} pour arriver à quelque chose d'équilibré.
 
-        int javadocLines = 0;
-        int importLines = 0;
+    Pattern methodPattern = Pattern.compile(
+            "((public|protected|default|private)\\s+)?" +
+                    "(static\\s+)?" + "[a-zA-Z_$][a-zA-Z0-9_$]*\\s+" +  "[a-zA-Z_$][a-zA-Z0-9_$]*\\s*" +
+                    "\\((([a-zA-Z_$][a-zA-Z0-9_$]*(\\[])*\\s+[a-zA-Z_$][a-zA-Z0-9_$]*,)*\\s*" +
+                    "([a-zA-Z_$][a-zA-Z0-9_$]*(\\[])*\\s+[a-zA-Z_$][a-zA-Z0-9_$]*))?\\)\\{", Pattern.CASE_INSENSITIVE);
+    // à partir d'ici, il faut compter les {} pour arriver à quelque chose d'équilibré.
 
+    Pattern methodNameExtracter = Pattern.compile("[a-zA-Z_$][a-zA-Z0-9_$]*\\s*\\(([a-zA-Z_$][a-zA-Z0-9_$\\s,<>\\[\\]]*)?\\)");
+
+    public LOC_Analyzer(ArrayList<String> fileLines) {
+        this.fileLines = fileLines;
+        analyzer();
+    }
+
+    /**
+     * Méthode principale de la classe. Effectue ou appelle toutes les opération d'analyse des lignes.
+     */
+    private void analyzer(){
         for(int i = 0; i<fileLines.size(); ++i){
 
             /* Stratégie générale : on vérifie s'il y a un type de commentaire dans la ligne, on enlève tout
@@ -38,48 +59,14 @@ public class LOC_Analyzer {
 
             // Détection des classes et des méthodes
 
-            Pattern classPattern = Pattern.compile(
-                    "((public|protected|default|private)?\\s+)?" + "class\\s+[a-zA-Z_$][a-zA-Z0-9_$]*\\s+" +
-                            "((extends|implements)\\s+[a-zA-Z_$][a-zA-Z0-9_$]*\\s+)?\\{", Pattern.CASE_INSENSITIVE);
-                            // à partir d'ici il faut compter les {} pour arriver à quelque chose d'équilibré.
+            classMatcher(line, i);
 
-            Matcher classMatcher = classPattern.matcher(line);
-            if (classMatcher.find()) {
-                String className = classMatcher.group().replaceAll(".*class\\s+", "").split(" ")[0];
-                int classEnd = findBalancedCurlyBracket(i, fileLines);
-                if(javadocLines > 0){
-                    listClasses.add(new Classe(className, i, classEnd, javadocLines));
-                    javadocLines = 0; // on remet le compteur à 0 puisque javadocs assignés.
-                } else {
-                    listClasses.add(new Classe(className, i, classEnd, 0));
-                }
-            }
-
-            Pattern methodPattern = Pattern.compile(
-                    "((public|protected|default|private)\\s+)?" +
-                            "(static\\s+)?" + "[a-zA-Z_$][a-zA-Z0-9_$]*\\s+" +  "[a-zA-Z_$][a-zA-Z0-9_$]*\\s*" +
-                            "\\((([a-zA-Z_$][a-zA-Z0-9_$]*(\\[])*\\s+[a-zA-Z_$][a-zA-Z0-9_$]*,)*\\s*" +
-                            "([a-zA-Z_$][a-zA-Z0-9_$]*(\\[])*\\s+[a-zA-Z_$][a-zA-Z0-9_$]*))?\\)\\{", Pattern.CASE_INSENSITIVE);
-                            // à partir d'ici, il faut compter les {} pour arriver à quelque chose d'équilibré.
-
-            Matcher methodMatcher = methodPattern.matcher(line);
-            if (methodMatcher.find()) {
-                Pattern pat = Pattern.compile("[a-zA-Z_$][a-zA-Z0-9_$]*\\s*\\(([a-zA-Z_$][a-zA-Z0-9_$\\s,<>\\[\\]]*)?\\)");
-                Matcher match = pat.matcher(methodMatcher.group());
-                String methodNameAndSign = match.group();
-                int methodEnd = findBalancedCurlyBracket(i, fileLines);
-                // on assume que la méthode trouvée se trouve dans la dernière classe trouvée.
-                if(javadocLines > 0){
-                    listClasses.get(listClasses.size() - 1).addMethod(methodNameAndSign, new Methode(methodNameAndSign, i, methodEnd, javadocLines));
-                    javadocLines = 0; // on remet le compteur à 0 puisque javadocs assignés.
-                } else {
-                    listClasses.get(listClasses.size() - 1).addMethod(methodNameAndSign, new Methode(methodNameAndSign, i, methodEnd, 0));
-                }
-            }
-
+            methodMatcher(line, i);
 
             // Détection des commentaires
 
+            //todo: sans barrière, ici on va avoir un problème ; À chaque boucle, on va resetter les bool.
+            // Bye bye comptage des commentaires multilignes!
             boolean mlCommentFound = false;
             boolean javaDocfound = false;
             boolean singleCommentFound = false;
@@ -90,7 +77,7 @@ public class LOC_Analyzer {
             // juste des String.contains pourrait peut-être être suffisant ici?
             if(line.contains("//") &&
                     line.replaceAll(patternMultiLineCommentonOneLine.pattern(), "").
-                    replaceAll("/\\*", "").contains("//")) {
+                            replaceAll("/\\*", "").contains("//")) {
 
                 // on enlève la partie commentée et on continue l'analyse sur ce qu'il reste.
                 line = line.replaceAll("//.*", "");
@@ -126,7 +113,58 @@ public class LOC_Analyzer {
         }
     }
 
+    /**
+     * Vérifie si la ligne est une déclaration de classe. Si oui, on crée un instance de Classe et on l'ajoute au
+     * hashmap listClasses. Sinon, il ne se passe rien.
+     * Agit par effet de bord.
+     * @param line contenu de la ligne actuelle
+     * @param currentLine numéro de la ligne actuelle
+     */
+    private void classMatcher(String line, int currentLine){
+        Matcher classMatcher = classPattern.matcher(line);
+        if (classMatcher.find()) {
+            String className = classMatcher.group().replaceAll(".*class\\s+", "").split(" ")[0];
+            int classEnd = findBalancedCurlyBracket(currentLine, fileLines);
+            if(javadocLines > 0){
+                listClasses.add(new Classe(className, currentLine, classEnd, javadocLines));
+                javadocLines = 0; // on remet le compteur à 0 puisque javadocs assignés.
+            } else {
+                listClasses.add(new Classe(className, currentLine, classEnd, 0));
+            }
+        }
+    }
 
+    /**
+     * Vérifie si la ligne est une déclaration de méthode. Si oui, on crée une instance de Methode et on l'associe à la
+     * classe dans laquelle elle se trouve. Sinon, il ne se passe rien.
+     * Agit par effet de bord.
+     * @param line contenu de la ligne actuelle
+     * @param currentLine numéro de la ligne actuelle
+     */
+    private void methodMatcher(String line, int currentLine){
+        Matcher methodMatcher = methodPattern.matcher(line);
+        if (methodMatcher.find()) {
+
+            Matcher methodNameMatcher = methodNameExtracter.matcher(methodMatcher.group());
+            String methodNameAndSign = methodNameMatcher.group();
+            int methodEnd = findBalancedCurlyBracket(currentLine, fileLines);
+            // on assume que la méthode trouvée se trouve dans la dernière classe trouvée.
+            if(javadocLines > 0){
+                listClasses.get(listClasses.size() - 1).addMethod(methodNameAndSign, new Methode(methodNameAndSign, currentLine, methodEnd, javadocLines));
+                javadocLines = 0; // on remet le compteur à 0 puisque javadocs assignés.
+            } else {
+                listClasses.get(listClasses.size() - 1).addMethod(methodNameAndSign, new Methode(methodNameAndSign, currentLine, methodEnd, 0));
+            }
+        }
+    }
+
+    /**
+     * Vérifie si les '{' et les '}' sont bien balancée. Si oui, renvoie la ligne à laquelle le balancement s'est
+     * effectué. Sinon, renvoie -1.
+     * @param startAtLine Numéro de la ligne à laquelle a débuté l'analyse
+     * @param fileLines Ensemble des lignes de code du fichier.
+     * @return Numéro de la ligne où l'on a trouvé le balancement.
+     */
     private int findBalancedCurlyBracket(int startAtLine, ArrayList<String> fileLines) {
         int bracketCount = 0;
         for(int i = startAtLine; i<fileLines.size();++i){

@@ -5,11 +5,13 @@ import java.util.Scanner;
 
 public class LinesExtractor {
 
-    public ArrayList<String> LinesExtractor(File file) throws FileNotFoundException {
-        return fileContentLineByLine(file);
-    }
-
-    private ArrayList<String> fileContentLineByLine(File file) throws FileNotFoundException {
+    /**
+     * Prend un fichier et retourne un ArrayList contenant chaque ligne du fichier sous forme de String.
+     * @param file fichier duquel on veut extraire les lignes une à une
+     * @return ArrayList contenant toutes les lignes du fichier
+     * @throws FileNotFoundException si le fichier n'existe pas au moment de la lecture
+     */
+    public static ArrayList<String> fileContentLineByLine(File file) throws FileNotFoundException {
         Scanner scanner = new Scanner(file);
         ArrayList<String> javaFileContent = new ArrayList<>();
         while(scanner.hasNext()){
@@ -17,5 +19,4 @@ public class LinesExtractor {
         }
         return javaFileContent;
     }
-
 }
