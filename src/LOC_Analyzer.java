@@ -1,8 +1,4 @@
-import java.io.File;
-import java.io.FileNotFoundException;
 import java.util.ArrayList;
-import java.util.Objects;
-import java.util.Scanner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -12,7 +8,6 @@ import java.util.regex.Pattern;
 //    Plus besoin d'anticiper le whitespace.
 
 public class LOC_Analyzer {
-
     private ArrayList<Classe> listClasses = new ArrayList<>();
 
     // Métriques
@@ -58,10 +53,10 @@ public class LOC_Analyzer {
             "|^import\\s[a-zA-Z_$][a-zA-Z0-9_$]*\\.[a-zA-Z_$][a-zA-Z0-9_$]*");
 
     public LOC_Analyzer(ArrayList<String> fileLines){
-        findClassesAndMethods(fileLines);
+
         boolean lineIsInMultiLinecomment = false;
 
-        // c'est bien beau tout ça mais comment tu vas attribuer les lignes de javadocs à la bonne méthode, mon champion?
+        int javadocLines = 0;
 
         for(int i = 0; i<fileLines.size(); ++i){
 
@@ -69,6 +64,38 @@ public class LOC_Analyzer {
                ce qu'il contient, puis on vérifie ce qu'il reste. */
 
             String line = fileLines.get(i);
+
+            // Détection des classes et des méthodes
+
+
+            Matcher classMatcher = classPattern.matcher(line);
+            if (classMatcher.find()) {
+                String className = classMatcher.group().replaceAll(".*class\\s+", "").split(" ")[0];
+                int classEnd = findBalancedCurlyBracket(i, fileLines);
+                if(javadocLines > 0){
+                    listClasses.add(new Classe(className, i, classEnd, javadocLines));
+                } else {
+                    listClasses.add(new Classe(className, i, classEnd, 0));
+                }
+            }
+
+            Matcher methodMatcher = methodPattern.matcher(line);
+            if (methodMatcher.find()) {
+
+                Pattern pat = Pattern.compile("[a-zA-Z_$][a-zA-Z0-9_$]*\\s*\\(([a-zA-Z_$][a-zA-Z0-9_$\\s,<>\\[\\]]*)?\\)");
+                Matcher match = pat.matcher(methodMatcher.group());
+                String methodNameAndSign = match.group();
+                int methodEnd = findBalancedCurlyBracket(i, fileLines);
+                // on assume que la méthode trouvée se trouve dans la dernière classe trouvée.
+                if(javadocLines > 0){
+                    listClasses.get(listClasses.size() - 1).addMethod(methodNameAndSign, new Methode(methodNameAndSign, i, methodEnd, javadocLines));
+                    javadocLines = 0;
+                } else {
+                    listClasses.get(listClasses.size() - 1).addMethod(methodNameAndSign, new Methode(methodNameAndSign, i, methodEnd, 0));
+                }
+            }
+
+            //
 
             Matcher importMatch = importPattern.matcher(line);
             Matcher mlCommentOneLine = patternMultiLineCommentonOneLine.matcher(line);
@@ -103,36 +130,6 @@ public class LOC_Analyzer {
         }
     }
 
-    private void findClassesAndMethods(ArrayList<String> fileLines) {
-        /* todo : à considérer - est-ce qu'on préfère optimiser en faisant le travail de trouver les classes et les
-            fonctions parralèlement au comptage de LOC / CLOC, ce qui permet de ne pas repasser deux fois sur l'ensemble
-            des lignes du document, ou bien est-ce qu'on préfère séparer les méthodes pour aider à la maintenabilité du
-            code ? En gros, il faudrait faire un benchmark pour voir quel est le coût en pourcentage, et voir si ça
-            ferait une bonne différence dans le cas d'un projet avec beaucoup de code à analyser.*/
-
-        for (int i = 0; i < fileLines.size(); ++i) {
-
-            String line = fileLines.get(i);
-
-            Matcher classMatcher = classPattern.matcher(line);
-            if (classMatcher.find()) {
-                String className = classMatcher.group().replaceAll(".*class\\s+", "").split(" ")[0];
-                int classEnd = findBalancedCurlyBracket(i, fileLines);
-                listClasses.add(new Classe(className, i, classEnd));
-            }
-
-            Matcher methodMatcher = methodPattern.matcher(line);
-            if (methodMatcher.find()) {
-                Pattern pat = Pattern.compile("[a-zA-Z_$][a-zA-Z0-9_$]*\\s*\\(([a-zA-Z_$][a-zA-Z0-9_$\\s,<>\\[\\]]*)?\\)");
-                Matcher match = pat.matcher(methodMatcher.group());
-                String methodNameAndSign = match.group();
-                int methodEnd = findBalancedCurlyBracket(i, fileLines);
-                // on assume que la méthode trouvée se trouve dans la dernière classe trouvée.
-                listClasses.get(listClasses.size() - 1).addMethod(methodNameAndSign, new Methode(methodNameAndSign, i, methodEnd));
-
-            }
-        }
-    }
 
     private int findBalancedCurlyBracket(int startAtLine, ArrayList<String> fileLines) {
         int bracketCount = 0;
@@ -151,14 +148,5 @@ public class LOC_Analyzer {
         }
         return -1;
     }
-
-    private void  isMultiLineClosed(String[] strings){
-        boolean multiLineisClosed = true;
-
-        for(String string:strings){
-
-        }
-    }
-
 
 }

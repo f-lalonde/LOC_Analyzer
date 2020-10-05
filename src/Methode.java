@@ -7,10 +7,10 @@ public class Methode {
     private final int start;
     private final int end;
 
-    public Methode(String name, int start, int end){
+    public Methode(String name, int start, int end, int javadocLines){
         this.name = name;
         this.LOC = 0;
-        this.CLOC = 0;
+        this.CLOC = javadocLines;
         this.DC = 0;
         this.start = start;
         this.end = end;
@@ -56,4 +56,5 @@ public class Methode {
     public int getEnd() {
         return end;
     }
+
 }

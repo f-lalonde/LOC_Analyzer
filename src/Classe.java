@@ -4,8 +4,8 @@ public class Classe extends Methode {
 
     private final HashMap<String, Methode> class_methods= new HashMap<>();
 
-    public Classe(String name, int start, int end){
-        super(name, start, end);
+    public Classe(String name, int start, int end, int javadocLines){
+        super(name, start, end, javadocLines);
     }
 
     public void addMethod(String methodName, Methode methode){
