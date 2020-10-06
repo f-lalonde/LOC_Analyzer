@@ -4,18 +4,14 @@ import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-//todo : est-ce qu'on préférerait que la méthode soit statique plutôt qu'un objet construit? (je crois que oui, mais à réfléchir).
-
 public class FindFiles {
-
     // Patron pour extension de fichier
-    private final Pattern patternJavaFile = Pattern.compile(".java$", Pattern.CASE_INSENSITIVE);
+    private static final Pattern patternJavaFile = Pattern.compile(".java$", Pattern.CASE_INSENSITIVE);
 
-    private ArrayList<File> fileList = new ArrayList<>();
-
-    public FindFiles(){
+    public static ArrayList<File> getFilesList(){
+        ArrayList<File> fileList = new ArrayList<>();
         File currentDirectory = new File(System.getProperty("user.dir"));
-        fileList = ListJavaFilesInDirectory(currentDirectory, fileList);
+        return ListJavaFilesInDirectory(currentDirectory, fileList);
     }
 
     /**
@@ -25,7 +21,7 @@ public class FindFiles {
      * @param fileList liste des fichiers déjà trouvés.
      * @return le ArrayList mis à jour avec les nouvelles entrées.
      */
-    private ArrayList<File> ListJavaFilesInDirectory(File dir, ArrayList<File> fileList) {
+    private static ArrayList<File> ListJavaFilesInDirectory(File dir, ArrayList<File> fileList) {
 
         for(File file : Objects.requireNonNull(dir.listFiles())){
             if(file.isDirectory()){
@@ -37,10 +33,6 @@ public class FindFiles {
                 }
             }
         }
-        return fileList;
-    }
-
-    public ArrayList<File> getFileList() {
         return fileList;
     }
 
