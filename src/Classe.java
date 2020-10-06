@@ -16,7 +16,7 @@ public class Classe extends Methode {
         return class_methods;
     }
 
-    public Methode getClassMethod(String name) {
+    public Methode getMethod(String name) {
         return class_methods.get(name);
     }
 }

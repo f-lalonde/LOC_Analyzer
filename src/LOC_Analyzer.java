@@ -7,39 +7,33 @@ import java.util.regex.Pattern;
 // 2. Éliminer le whitespace, tout mettre en un gros bloc mais en préservant les \n et \r, utiliser ceux-ci pour compter les lignes de codes.
 //    Plus besoin d'anticiper le whitespace.
 
+
 public class LOC_Analyzer {
     private final ArrayList<Classe> listClasses = new ArrayList<>();
 
-    // Métriques
-    private int classe_LOC = 0;
-    private int methode_LOC = 0;
-    private int classe_CLOC = 0;
-    private int methode_CLOC = 0;
-    private double classe_DC;
-    private double methode_DC;
-
-    private ArrayList<String> fileLines;
+    private final ArrayList<String> fileLines;
     private int javadocLines = 0;
-    private int importLines = 0;
-    // Misc
-    private int import_lines_in_file = 0;
+    private int commentOutsideOfAClass = 0;
+    private int LOCOutsideOfAClass = 0;
+    private String currentMethod = " ";
 
     // Patrons regex
-    private final Pattern javaNamingConvention = Pattern.compile("[a-zA-Z_$][a-zA-Z0-9_$]*");
 
-    Pattern classPattern = Pattern.compile(
+    private final Pattern classPattern = Pattern.compile(
             "((public|protected|default|private)?\\s+)?" + "class\\s+[a-zA-Z_$][a-zA-Z0-9_$]*\\s+" +
                     "((extends|implements)\\s+[a-zA-Z_$][a-zA-Z0-9_$]*\\s+)?\\{", Pattern.CASE_INSENSITIVE);
     // à partir d'ici il faut compter les {} pour arriver à quelque chose d'équilibré.
 
-    Pattern methodPattern = Pattern.compile(
+    private final Pattern methodPattern = Pattern.compile(
             "((public|protected|default|private)\\s+)?" +
                     "(static\\s+)?" + "[a-zA-Z_$][a-zA-Z0-9_$]*\\s+" +  "[a-zA-Z_$][a-zA-Z0-9_$]*\\s*" +
                     "\\((([a-zA-Z_$][a-zA-Z0-9_$]*(\\[])*\\s+[a-zA-Z_$][a-zA-Z0-9_$]*,)*\\s*" +
                     "([a-zA-Z_$][a-zA-Z0-9_$]*(\\[])*\\s+[a-zA-Z_$][a-zA-Z0-9_$]*))?\\)\\{", Pattern.CASE_INSENSITIVE);
     // à partir d'ici, il faut compter les {} pour arriver à quelque chose d'équilibré.
 
-    Pattern methodNameExtracter = Pattern.compile("[a-zA-Z_$][a-zA-Z0-9_$]*\\s*\\(([a-zA-Z_$][a-zA-Z0-9_$\\s,<>\\[\\]]*)?\\)");
+    private final Pattern methodNameExtracter = Pattern.compile("[a-zA-Z_$][a-zA-Z0-9_$]*\\s*\\(([a-zA-Z_$][a-zA-Z0-9_$\\s,<>\\[\\]]*)?\\)");
+
+    private final Pattern patternMultiLineCommentonOneLine = Pattern.compile("/\\*.*\\*/");
 
     public LOC_Analyzer(ArrayList<String> fileLines) {
         this.fileLines = fileLines;
@@ -50,67 +44,131 @@ public class LOC_Analyzer {
      * Méthode principale de la classe. Effectue ou appelle toutes les opération d'analyse des lignes.
      */
     private void analyzer(){
-        for(int i = 0; i<fileLines.size(); ++i){
+
+        // on va ajouter les lignes qui se trouvent à l'extérieur des classes (commentaires, imports, etc) à toutes
+        // les classes se trouvant dans le fichier, à l'exception de la javaDoc plus ou moins correctement formée
+        // (i.e. sur au moins 3 lignes).
+        boolean outsideOfAClass = true;
+        boolean outsideOfAMethod = true;
+        int currentClassIndex = -1;
+        Methode thisMethode = null;
+        boolean mlCommentFound = false;
+        boolean javaDocfound = false;
+        boolean singleCommentFound;
+        for(int i = 0; i<fileLines.size(); ++i) {
+            singleCommentFound = false;
 
             /* Stratégie générale : on vérifie s'il y a un type de commentaire dans la ligne, on enlève tout
                ce qu'il contient, puis on vérifie ce qu'il reste. */
 
             String line = fileLines.get(i);
 
-            // Détection des classes et des méthodes
-
-            classMatcher(line, i);
-
-            methodMatcher(line, i);
-
-            // Détection des commentaires
-
-            //todo: sans barrière, ici on va avoir un problème ; À chaque boucle, on va resetter les bool.
-            // Bye bye comptage des commentaires multilignes!
-            boolean mlCommentFound = false;
-            boolean javaDocfound = false;
-            boolean singleCommentFound = false;
-
-            Pattern patternMultiLineCommentonOneLine = Pattern.compile("/\\*.*\\*/");
-
-            // on vérifie que "//" n'est pas imbriqué dans un commentaire /* ... */ ou /* ...
-            // juste des String.contains pourrait peut-être être suffisant ici?
-            if(line.contains("//") &&
-                    line.replaceAll(patternMultiLineCommentonOneLine.pattern(), "").
-                            replaceAll("/\\*", "").contains("//")) {
-
-                // on enlève la partie commentée et on continue l'analyse sur ce qu'il reste.
-                line = line.replaceAll("//.*", "");
-                singleCommentFound = true;
-            }
-
-            Matcher mlCommentOneLine = patternMultiLineCommentonOneLine.matcher(line);
-            if(line.contains("/*")){
-                if(mlCommentOneLine.find()){
-                    singleCommentFound = true;
+            /* On vérifie d'abord si on est à l'intérieur d'un commentaire multi-ligne.
+               Si oui, on doit ajouter une ligne de commentaire, et vérifier si il y a la fin du commentaire sur cette
+               ligne-ci. Si oui, on doit vérifier pour la présence de code. Sinon, on passe à la ligne suivante.
+             */
+            if(mlCommentFound || javaDocfound){
+                if(line.contains("\\*/")){
+                    // on gère d'abord la possibilité d'avoir ouvert et fermé un nouveau commentaire multi-ligne pour
+                    // éviter une détection trop gourmande.
                     line = line.replaceAll("/\\*.*\\*/", "");
+
+                    // puis on enlève la partie commentée et on continue l'analyse sur ce qu'il reste.
+                    line = line.replaceAll(".*\\*/", "");
+                    singleCommentFound = true;
                 } else {
-                    if(line.contains("/**")){
-                        javaDocfound = true;
+                    if (outsideOfAClass) {
+                        if (javaDocfound) {
+                            javadocLines++;
+                        } else {
+                            commentOutsideOfAClass++;
+                        }
                     } else {
-                        mlCommentFound = true;
+                        listClasses.get(currentClassIndex).incrementCLOC();
+                        if (!outsideOfAMethod) {
+                            assert thisMethode != null : "On a détecté que l'on est dans une méthode, mais aucune méthode n'a été chargée.";
+                            thisMethode.incrementCLOC();
+                        }
                     }
-                    line = line.replaceAll("/\\*.*", "");
+                    continue;
                 }
             }
 
-            // Détection des importations. On va ajouter ces lignes à toutes les classes présentes dans le fichier.
 
-            // todo : on pourrait laisser faire et juste dire que tout code ou commentaire qui ne se trouve pas dans
-            //  une classe en particulier appartient à toutes les classes se trouvant dans le fichier (surtout que
-            //  généralement, on retrouve une seule classe par fichier, du haut de mon peu d'expérience). Donc, on doit
-            //  détecter si on est dans une classe, et si non, garder en mémoire le compte de LOC / CLOC, et l'ajouter
-            //  à toutes les classes du fichier à la fin.
-            Pattern importPattern = Pattern.compile("\\s.*import\\s[a-zA-Z_$][a-zA-Z0-9_$]*\\.[a-zA-Z_$][a-zA-Z0-9_$]*"
-                    + "|^import\\s[a-zA-Z_$][a-zA-Z0-9_$]*\\.[a-zA-Z_$][a-zA-Z0-9_$]*");
-            Matcher importMatch = importPattern.matcher(line);
+            // Détection des classes et des méthodes
+
+            if (classMatcher(line, i)) {      //  <--- il y a des effets de bords ici.
+                outsideOfAClass = false;
+                currentClassIndex = listClasses.size() - 1;
+            } else if (listClasses.get(currentClassIndex) != null && i > listClasses.get(currentClassIndex).getEnd()) {
+                outsideOfAClass = true;
+            }
+
+            if (methodMatcher(line, i)) { //  <--- il y a des effets de bords ici.
+                outsideOfAMethod = false;
+                thisMethode = listClasses.get(currentClassIndex).getMethod(currentMethod);
+            } else if (thisMethode != null && i > thisMethode.getEnd()) {
+                outsideOfAMethod = true;
+            }
+
+            // Détection des commentaires
+
+            if (findSingleComment(line)) {
+                singleCommentFound = true;
+                // on enlève la partie commentée et on continue l'analyse sur ce qu'il reste.
+                line = line.replaceAll("//.*", "");
+            }
+
+                // tableau de 3 booléens, représentant : 0 - singleCommentFound, 1 - mlCommentFound, 2 - javaDocfound
+            boolean[] values = findMultiLineComment(line);
+
+            singleCommentFound = singleCommentFound || values[0];
+            mlCommentFound = values[1];
+            javaDocfound = values[2];
+
+            if(singleCommentFound || mlCommentFound || javaDocfound) {
+                if (outsideOfAClass) {
+                    if (javaDocfound) {
+                        javadocLines++;
+                    } else {
+                        commentOutsideOfAClass++;
+                    }
+                } else {
+                    listClasses.get(currentClassIndex).incrementCLOC();
+                    if (!outsideOfAMethod) {
+                        assert thisMethode != null : "On a détecté que l'on est dans une méthode, mais aucune méthode n'a été chargée.";
+                        thisMethode.incrementCLOC();
+                    }
+                }
+            } else {
+                if(outsideOfAClass){
+                    LOCOutsideOfAClass++;
+                } else {
+                    listClasses.get(currentClassIndex).incrementLOC();
+                    if (!outsideOfAMethod) {
+                        assert thisMethode != null : "On a détecté que l'on est dans une méthode, mais aucune méthode n'a été chargée.";
+                        thisMethode.incrementLOC();
+                    }
+                }
+            }
 
         }
+        // on ajoute les lignes de code à l'extérieur des classes à toutes les classes, puisqu'elles en dépendent toutes.
+        listClasses.forEach(classe -> {
+            while(LOCOutsideOfAClass > 0){
+                classe.incrementLOC();
+                LOCOutsideOfAClass--;
+            }
+            while (commentOutsideOfAClass > 0){
+                classe.incrementCLOC();
+                commentOutsideOfAClass--;
+            }
+            System.out.println("La classe " + classe.getName() + " a un DC de : " + classe.computeDC());
+            System.out.println("Ses méthodes sont :");
+            classe.getClass_methods().forEach((name,method) -> {
+                System.out.println("\t" + name + ", DC : " + method.computeDC());
+            });
+        });
     }
 
     /**
@@ -119,8 +177,9 @@ public class LOC_Analyzer {
      * Agit par effet de bord.
      * @param line contenu de la ligne actuelle
      * @param currentLine numéro de la ligne actuelle
+     * @return vrai si on a trouvé une classe.
      */
-    private void classMatcher(String line, int currentLine){
+    private boolean classMatcher(String line, int currentLine){
         Matcher classMatcher = classPattern.matcher(line);
         if (classMatcher.find()) {
             String className = classMatcher.group().replaceAll(".*class\\s+", "").split(" ")[0];
@@ -131,31 +190,38 @@ public class LOC_Analyzer {
             } else {
                 listClasses.add(new Classe(className, currentLine, classEnd, 0));
             }
+            return true;
         }
+        return false;
     }
 
     /**
      * Vérifie si la ligne est une déclaration de méthode. Si oui, on crée une instance de Methode et on l'associe à la
-     * classe dans laquelle elle se trouve. Sinon, il ne se passe rien.
+     * classe dans laquelle elle se trouve. On met également à jour la variable String "currentMethod", qui aura le nom
+     * et la signature de la méthode que nous venons de détecter.
+     * Sinon, il ne se passe rien.
      * Agit par effet de bord.
      * @param line contenu de la ligne actuelle
      * @param currentLine numéro de la ligne actuelle
+     * @return vrai si on a trouvé une méthode
      */
-    private void methodMatcher(String line, int currentLine){
+    private boolean methodMatcher(String line, int currentLine){
         Matcher methodMatcher = methodPattern.matcher(line);
         if (methodMatcher.find()) {
 
             Matcher methodNameMatcher = methodNameExtracter.matcher(methodMatcher.group());
-            String methodNameAndSign = methodNameMatcher.group();
+            currentMethod = methodNameMatcher.group();
             int methodEnd = findBalancedCurlyBracket(currentLine, fileLines);
             // on assume que la méthode trouvée se trouve dans la dernière classe trouvée.
             if(javadocLines > 0){
-                listClasses.get(listClasses.size() - 1).addMethod(methodNameAndSign, new Methode(methodNameAndSign, currentLine, methodEnd, javadocLines));
+                listClasses.get(listClasses.size() - 1).addMethod(currentMethod, new Methode(currentMethod, currentLine, methodEnd, javadocLines));
                 javadocLines = 0; // on remet le compteur à 0 puisque javadocs assignés.
             } else {
-                listClasses.get(listClasses.size() - 1).addMethod(methodNameAndSign, new Methode(methodNameAndSign, currentLine, methodEnd, 0));
+                listClasses.get(listClasses.size() - 1).addMethod(currentMethod, new Methode(currentMethod, currentLine, methodEnd, 0));
             }
+            return true;
         }
+        return false;
     }
 
     /**
@@ -183,4 +249,29 @@ public class LOC_Analyzer {
         return -1;
     }
 
+    private boolean findSingleComment(String line) {
+        // on vérifie que "//" n'est pas imbriqué dans un commentaire /* ... */ ou /* ... (sinon il sera compté deux fois)
+        return line.contains("//") &&
+                line.replaceAll(patternMultiLineCommentonOneLine.pattern(), "").
+                        replaceAll("/\\*", "").contains("//");
+    }
+
+    private boolean[] findMultiLineComment(String line){
+        Matcher mlCommentOneLine = patternMultiLineCommentonOneLine.matcher(line);
+        boolean[] returnedValues = {false, false, false};
+        if(line.contains("/*")){
+            if(mlCommentOneLine.find()){
+                returnedValues[0] = true;       // singleCommentFound
+                line = line.replaceAll("/\\*.*\\*/", "");
+            } else {
+                if(line.contains("/**")){
+                    returnedValues[2] = true;   // javaDocfound
+                } else {
+                    returnedValues[1] = true;   // mlCommentFound
+                }
+                line = line.replaceAll("/\\*.*", "");
+            }
+        }
+        return returnedValues;
+    }
 }
