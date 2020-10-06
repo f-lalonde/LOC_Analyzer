@@ -296,6 +296,7 @@ public class LOC_Analyzer {
     }
 
     private boolean[] findMultiLineComment(String line){
+        line = line.replaceAll("\".*\"", " ");
         Matcher mlCommentOneLine = patternMultiLineCommentonOneLine.matcher(line);
         boolean[] returnedValues = {false, false, false};
         if(line.contains("/*")){
