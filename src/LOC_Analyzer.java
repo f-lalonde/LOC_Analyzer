@@ -122,10 +122,18 @@ public class LOC_Analyzer {
                 // tableau de 3 booléens, représentant : 0 - singleCommentFound, 1 - mlCommentFound, 2 - javaDocfound
             boolean[] values = findMultiLineComment(line);
 
+            // mise à jour des lignes, selon ce qui fut trouvé
+            if(values[0]){
+                line = line.replaceAll("/\\*.*\\*/", "");
+            } else if(values[1] || values[2]){
+                line = line.replaceAll("/\\*.*", "");
+            }
+
             singleCommentFound = singleCommentFound || values[0];
             mlCommentFound = values[1];
             javaDocfound = values[2];
 
+            // si on a trouvé des commentaires, CLOC++
             if(singleCommentFound || mlCommentFound || javaDocfound) {
                 if (outsideOfAClass) {
                     if (javaDocfound) {
@@ -140,7 +148,9 @@ public class LOC_Analyzer {
                         thisMethode.incrementCLOC();
                     }
                 }
-            } else {
+            }
+            // si après tous les retraits il reste encore des charactères non vide, LOC++
+            if(!line.isBlank()){
                 if(outsideOfAClass){
                     LOCOutsideOfAClass++;
                 } else {
@@ -262,16 +272,18 @@ public class LOC_Analyzer {
         if(line.contains("/*")){
             if(mlCommentOneLine.find()){
                 returnedValues[0] = true;       // singleCommentFound
-                line = line.replaceAll("/\\*.*\\*/", "");
             } else {
                 if(line.contains("/**")){
                     returnedValues[2] = true;   // javaDocfound
                 } else {
                     returnedValues[1] = true;   // mlCommentFound
                 }
-                line = line.replaceAll("/\\*.*", "");
             }
         }
         return returnedValues;
+    }
+
+    public ArrayList<Classe> getListClasses() {
+        return listClasses;
     }
 }
