@@ -25,10 +25,12 @@ public class LOC_Analyzer {
     // à partir d'ici il faut compter les {} pour arriver à quelque chose d'équilibré.
 
     private final Pattern methodPattern = Pattern.compile(
-            "((public|protected|default|private)\\s+)?" +
-                    "(static\\s+)?" + "[a-zA-Z_$][a-zA-Z0-9_$]*\\s+" +  "[a-zA-Z_$][a-zA-Z0-9_$]*\\s*" +
-                    "\\((([a-zA-Z_$][a-zA-Z0-9_$]*(\\[])*\\s+[a-zA-Z_$][a-zA-Z0-9_$]*,)*\\s*" +
-                    "([a-zA-Z_$][a-zA-Z0-9_$]*(\\[])*\\s+[a-zA-Z_$][a-zA-Z0-9_$]*))?\\)\\{", Pattern.CASE_INSENSITIVE);
+            "^(?!catch|while|if|for|switch)\\s*((public|protected|default|private)\\s+)?" +
+                    "(static\\s+)?" + "([a-zA-Z_$][a-zA-Z0-9_$]*(<[a-zA-Z_$]+[a-zA-Z0-9_$]*>)?\\s+)?" +
+                    "[a-zA-Z_$][a-zA-Z0-9_$]*\\s*" +
+                    "\\(((\\s*[a-zA-Z_$][a-zA-Z0-9_$]*(<[a-zA-Z_$]+[a-zA-Z0-9_$]*>)?(\\[])*\\s+[a-zA-Z_$][a-zA-Z0-9_$]*\\s*,)*\\s*" +
+                    "([a-zA-Z_$][a-zA-Z0-9_$]*(<[a-zA-Z_$]+[a-zA-Z0-9_$]*>)?(\\[])*\\s+[a-zA-Z_$][a-zA-Z0-9_$]*))?\\s*\\)" +
+                    "(\\s+throws\\s+[a-zA-Z_$][a-zA-Z0-9_$]*)?\\s*\\{", Pattern.CASE_INSENSITIVE);
     // à partir d'ici, il faut compter les {} pour arriver à quelque chose d'équilibré.
 
     private final Pattern methodNameExtracter = Pattern.compile("[a-zA-Z_$][a-zA-Z0-9_$]*\\s*\\(([a-zA-Z_$][a-zA-Z0-9_$\\s,<>\\[\\]]*)?\\)");
@@ -47,14 +49,17 @@ public class LOC_Analyzer {
 
         // on va ajouter les lignes qui se trouvent à l'extérieur des classes (commentaires, imports, etc) à toutes
         // les classes se trouvant dans le fichier, à l'exception de la javaDoc plus ou moins correctement formée
-        // (i.e. sur au moins 3 lignes).
+
         boolean outsideOfAClass = true;
         boolean outsideOfAMethod = true;
-        int currentClassIndex = -1;
+
+        int currentClassIndex = 0;
         Methode thisMethode = null;
+
         boolean mlCommentFound = false;
         boolean javaDocfound = false;
         boolean singleCommentFound;
+
         for(int i = 0; i<fileLines.size(); ++i) {
             singleCommentFound = false;
 
@@ -76,6 +81,10 @@ public class LOC_Analyzer {
                     // puis on enlève la partie commentée et on continue l'analyse sur ce qu'il reste.
                     line = line.replaceAll(".*\\*/", "");
                     singleCommentFound = true;
+
+                    mlCommentFound = false;
+                    javaDocfound = false;
+
                 } else {
                     if (outsideOfAClass) {
                         if (javaDocfound) {
@@ -86,7 +95,6 @@ public class LOC_Analyzer {
                     } else {
                         listClasses.get(currentClassIndex).incrementCLOC();
                         if (!outsideOfAMethod) {
-                            assert thisMethode != null : "On a détecté que l'on est dans une méthode, mais aucune méthode n'a été chargée.";
                             thisMethode.incrementCLOC();
                         }
                     }
@@ -94,17 +102,16 @@ public class LOC_Analyzer {
                 }
             }
 
-
             // Détection des classes et des méthodes
 
-            if (classMatcher(line, i)) {      //  <--- il y a des effets de bords ici.
+            if (classMatcher(line, i)) {    //  <--- il y a des effets de bords ici.
                 outsideOfAClass = false;
                 currentClassIndex = listClasses.size() - 1;
-            } else if (listClasses.get(currentClassIndex) != null && i > listClasses.get(currentClassIndex).getEnd()) {
+            } else if (!listClasses.isEmpty() && i > listClasses.get(currentClassIndex).getEnd()) {
                 outsideOfAClass = true;
             }
 
-            if (methodMatcher(line, i)) { //  <--- il y a des effets de bords ici.
+            if (methodMatcher(line, i)) {   //  <--- il y a des effets de bords ici.
                 outsideOfAMethod = false;
                 thisMethode = listClasses.get(currentClassIndex).getMethod(currentMethod);
             } else if (thisMethode != null && i > thisMethode.getEnd()) {
@@ -112,7 +119,6 @@ public class LOC_Analyzer {
             }
 
             // Détection des commentaires
-
             if (findSingleComment(line)) {
                 singleCommentFound = true;
                 // on enlève la partie commentée et on continue l'analyse sur ce qu'il reste.
@@ -175,9 +181,7 @@ public class LOC_Analyzer {
             }
             System.out.println("La classe " + classe.getName() + " a un DC de : " + classe.computeDC());
             System.out.println("Ses méthodes sont :");
-            classe.getClass_methods().forEach((name,method) -> {
-                System.out.println("\t" + name + ", DC : " + method.computeDC());
-            });
+            classe.getClass_methods().forEach((name,method) -> System.out.println("\t" + name + ", DC : " + method.computeDC()));
         });
     }
 
@@ -220,10 +224,12 @@ public class LOC_Analyzer {
         if (methodMatcher.find()) {
 
             Matcher methodNameMatcher = methodNameExtracter.matcher(methodMatcher.group());
+            methodNameMatcher.find();
             currentMethod = methodNameMatcher.group();
             int methodEnd = findBalancedCurlyBracket(currentLine, fileLines);
             // on assume que la méthode trouvée se trouve dans la dernière classe trouvée.
             if(javadocLines > 0){
+                System.out.println("ajouté la méthode "+currentMethod+" à la classe " + listClasses.get(listClasses.size() - 1).getName()+"\n");
                 listClasses.get(listClasses.size() - 1).addMethod(currentMethod, new Methode(currentMethod, currentLine, methodEnd, javadocLines));
                 javadocLines = 0; // on remet le compteur à 0 puisque javadocs assignés.
             } else {
