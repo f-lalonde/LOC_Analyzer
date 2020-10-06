@@ -106,7 +106,7 @@ public class LOC_Analyzer {
 
             if (methodMatcher(line, i)) { //  <--- il y a des effets de bords ici.
                 outsideOfAMethod = false;
-                thisMethode = listClasses.get(currentClassIndex).getClass_methods().get(currentMethod);
+                thisMethode = listClasses.get(currentClassIndex).getMethod(currentMethod);
             } else if (thisMethode != null && i > thisMethode.getEnd()) {
                 outsideOfAMethod = true;
             }
@@ -163,6 +163,11 @@ public class LOC_Analyzer {
                 classe.incrementCLOC();
                 commentOutsideOfAClass--;
             }
+            System.out.println("La classe " + classe.getName() + " a un DC de : " + classe.computeDC());
+            System.out.println("Ses méthodes sont :");
+            classe.getClass_methods().forEach((name,method) -> {
+                System.out.println("\t" + name + ", DC : " + method.computeDC());
+            });
         });
     }
 
