@@ -24,13 +24,12 @@ public class Methode {
         CLOC++;
     }
 
-    public double computeDC(){
+    public void computeDC(){
         if(LOC == 0){
             DC = 0;
         } else {
             DC = (double)CLOC / LOC;
         }
-        return getDC();
     }
 
     public String getName() {
