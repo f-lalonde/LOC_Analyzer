@@ -135,6 +135,10 @@ public class LOC_Analyzer {
 
             //TODO : S'assurer que toutes ces vérifications incrémentent la complexité dans la bonne méthode
 
+            System.out.println("ICI CHARLOTTE ------------------------------------------------");
+            System.out.println(thisMethode == null);
+            System.out.println(fileLines.get(i));
+
             //vérification de la présence des if et else if puis incrémentation de la complexité en
             //conséquence
             if (line.contains("else if")){
@@ -154,10 +158,14 @@ public class LOC_Analyzer {
                 thisMethode.incrementComplexite(1);
             }
 
-            //TODO : détecter les switch et augmenter la complexité en fonction du nb de case
-            //détection d'un switch
+            //détection d'un switch et des case qui suivent pour incrémenter la complexité
             if (line.contains("switch ") || line.contains("switch(")) {
+                thisMethode.incrementComplexite(-1);
+            }
 
+            if(line.contains("case :") || line.contains("case:") || line.contains("default ")
+                    || line.contains("default:")) {
+                thisMethode.incrementComplexite(1);
             }
 
             // Détection des classes et des méthodes

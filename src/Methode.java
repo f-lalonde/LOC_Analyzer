@@ -67,4 +67,6 @@ public class Methode {
     public void incrementComplexite(int increment) {
         complexite += increment;
     }
+
+    public int getComplexite() { return complexite; }
 }
