@@ -72,9 +72,7 @@ public class LOC_Analyzer {
         boolean singleCommentFound;
 
         for(int i = 0; i<fileLines.size(); ++i) {
-            if(javadocLines > 0){
-                System.out.println("Javadocs : " + javadocLines);
-            }
+
             singleCommentFound = false;
 
             /* Stratégie générale : on vérifie s'il y a un type de commentaire dans la ligne, on enlève tout
@@ -178,7 +176,6 @@ public class LOC_Analyzer {
                     if (!outsideOfAMethod) {
                         assert thisMethode != null : "On a détecté que l'on est dans une méthode, mais aucune méthode n'a été chargée.";
                         thisMethode.incrementCLOC();
-                        System.out.println("TEST CLOC : " + thisMethode.getCLOC());
                     }
                 }
             }
@@ -207,11 +204,9 @@ public class LOC_Analyzer {
                 commentOutsideOfAClass--;
             }
             classe.computeDC();
-            System.out.println("La classe " + classe.getName() + " a un DC de : " + classe.getDC());
-            System.out.println("Ses méthodes sont :");
+
             classe.getClass_methods().forEach((name,method) -> {
                 method.computeDC();
-                System.out.println("\t" + name + ", DC : " + method.getDC() + "( CLOC = " + method.getCLOC() + ", LOC : " + method.getLOC() + ")");
             });
         });
     }
@@ -229,11 +224,11 @@ public class LOC_Analyzer {
         if (classMatcher.find()) {
             String className = classMatcher.group().replaceAll(".*class\\s+", "").split(" ")[0];
             int classEnd = findBalancedCurlyBracket(currentLine, fileLines);
-            System.out.println("CLASS END AT LINE " + classEnd);
+
             if(javadocLines > 0){
-                System.out.println("Assigné les lignes Javadocs à la CLASSE : " + className);
                 listClasses.add(new Classe(className, currentLine, classEnd, javadocLines));
                 javadocLines = 0; // on remet le compteur à 0 puisque javadocs assignés.
+
             } else {
                 listClasses.add(new Classe(className, currentLine, classEnd, 0));
             }
@@ -274,13 +269,15 @@ public class LOC_Analyzer {
             currentMethod = methodNameMatcher.group("methodName")+tempSignature;
             int methodEnd = findBalancedCurlyBracket(currentLine, fileLines);
             // on assume que la méthode trouvée se trouve dans la dernière classe trouvée.
+            Classe currentClass = listClasses.get(listClasses.size() - 1);
             if(javadocLines > 0){
-                System.out.println("Assigné les lignes Javadocs à la Methode : " + currentMethod);
-                System.out.println("ajouté la méthode "+currentMethod+" à la classe " + listClasses.get(listClasses.size() - 1).getName()+"\n");
-                listClasses.get(listClasses.size() - 1).addMethod(currentMethod, new Methode(currentMethod, currentLine, methodEnd, javadocLines));
-                javadocLines = 0; // on remet le compteur à 0 puisque javadocs assignés.
+                currentClass.addMethod(currentMethod, new Methode(currentMethod, currentLine, methodEnd, javadocLines));
+                // on remet le compteur à 0 en assignant aussi les javadocs à la classe de la méthode.
+                while(javadocLines > 0){
+                    currentClass.incrementCLOC();
+                    javadocLines--;
+                }
             } else {
-                System.out.println("ajouté la méthode "+currentMethod+" à la classe " + listClasses.get(listClasses.size() - 1).getName()+"\n");
                 listClasses.get(listClasses.size() - 1).addMethod(currentMethod, new Methode(currentMethod, currentLine, methodEnd, 0));
             }
             return true;
