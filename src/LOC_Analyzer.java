@@ -20,7 +20,7 @@ public class LOC_Analyzer {
 
     private final Pattern classPattern = Pattern.compile(
             "((public|protected|default|private)?\\s+)?" + "class\\s+[a-zA-Z_$][a-zA-Z0-9_$]*\\s+" +
-                    "((extends|implements)\\s+[a-zA-Z_$][a-zA-Z0-9_$]*\\s+)?\\{", Pattern.CASE_INSENSITIVE);
+                    "((extends|implements)\\s+[a-zA-Z_$][a-zA-Z0-9_$]*\\s*)?\\{", Pattern.CASE_INSENSITIVE);
     // à partir d'ici il faut compter les {} pour arriver à quelque chose d'équilibré.
 
     // ce Pattern est dégueulasse, je sais. Il y a surement moyen de faire mieux.

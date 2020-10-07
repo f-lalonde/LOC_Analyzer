@@ -1,0 +1,8 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="LOC_Analyzer:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/LOC_Analyzer_jar</output-path>
+    <root id="archive" name="LOC_Analyzer.jar">
+      <element id="module-output" name="LOC_Analyzer" />
+    </root>
+  </artifact>
+</component>
