@@ -31,14 +31,16 @@ public class FichierCSV {
         String currentPath = file.getAbsolutePath();
 
         analyzer.getListClasses().forEach(classe -> {
+            classe.computeDC();
             try {
-                classWriter.write(currentPath+", "+ classe.getName() + ", " + classe.getLOC() +", " + classe.getCLOC() + ", " + classe.computeDC() + "\n");
+                classWriter.write(currentPath+", "+ classe.getName() + ", " + classe.getLOC() +", " + classe.getCLOC() + ", " + classe.getDC() + "\n");
             } catch (IOException e) {
                 e.printStackTrace();
             }
             classe.getClass_methods().forEach((methodName, method) -> {
+                method.computeDC();
                 try {
-                    methodWriter.write(currentPath + ", " + classe.getName() + ", " + methodName + ", " + method.getLOC() +", " + method.getCLOC() + ", " + method.computeDC() + "\n");
+                    methodWriter.write(currentPath + ", " + classe.getName() + ", " + methodName + ", " + method.getLOC() +", " + method.getCLOC() + ", " + method.getDC() + "\n");
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
