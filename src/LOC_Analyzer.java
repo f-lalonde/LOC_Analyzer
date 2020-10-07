@@ -16,6 +16,8 @@ public class LOC_Analyzer {
     private int LOCOutsideOfAClass = 0;
     private String currentMethod = " ";
 
+    private boolean complexite1 = false; //true quand il faut incrémenter la complexité de 1
+
     // Patrons regex
 
     private final Pattern classPattern = Pattern.compile(
@@ -126,6 +128,36 @@ public class LOC_Analyzer {
                     }
                     continue;
                 }
+            }
+
+            //TODO : Méthode qui détecte les if, case, while et repeat pour calculer la complexité
+            //cyclomatique de McCabe
+
+            //TODO : S'assurer que toutes ces vérifications incrémentent la complexité dans la bonne méthode
+
+            //vérification de la présence des if et else if puis incrémentation de la complexité en
+            //conséquence
+            if (line.contains("else if")){
+                thisMethode.incrementComplexite(1);
+            } else if (line.contains("if ")|| line.contains("if(")) {
+                thisMethode.incrementComplexite(1);
+            }
+
+            //vérification de la présence d'un while puis incrémentation de la complexité en
+            //conséquence
+            if (line.contains("while ")|| line.contains("while(")) {
+                thisMethode.incrementComplexite(1);
+            }
+
+            //cas de la détection d'un repeat pour incrémenter la complexité
+            if (line.contains("repeat ") || line.contains("repeat(")) {
+                thisMethode.incrementComplexite(1);
+            }
+
+            //TODO : détecter les switch et augmenter la complexité en fonction du nb de case
+            //détection d'un switch
+            if (line.contains("switch ") || line.contains("switch(")) {
+
             }
 
             // Détection des classes et des méthodes

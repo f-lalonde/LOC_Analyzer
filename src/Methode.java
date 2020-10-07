@@ -1,8 +1,11 @@
 public class Methode {
+
     private final String name;
     private int LOC;
     private int CLOC;
     private double DC;
+
+    private int complexite;
 
     private final int start;
     private final int end;
@@ -12,6 +15,7 @@ public class Methode {
         this.LOC = 0;
         this.CLOC = javadocLines;
         this.DC = 0;
+        this.complexite = 0;
         this.start = start;
         this.end = end;
     }
@@ -30,6 +34,10 @@ public class Methode {
         } else {
             DC = (double)CLOC / LOC;
         }
+    }
+
+    public int complexite() {
+        return complexite;
     }
 
     public String getName() {
@@ -56,4 +64,7 @@ public class Methode {
         return end;
     }
 
+    public void incrementComplexite(int increment) {
+        complexite += increment;
+    }
 }
