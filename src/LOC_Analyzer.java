@@ -212,6 +212,7 @@ public class LOC_Analyzer {
                         thisMethode.incrementLOC();
 
                         // On en profite au passage pour vérifier la présence d'un noeud prédicat :
+                        //todo : mettre switch (catch / pas catch) ici. Note à moi même : trouver comment accepter des arguments en entrée :|
                         Matcher matcherNoeudPredicat = patternNoeudPredicat.matcher(line);
                         while(matcherNoeudPredicat.find()) {
                             thisMethode.incrementNoeudPredicat();
@@ -232,13 +233,16 @@ public class LOC_Analyzer {
                 classe.incrementCLOC();
                 commentOutsideOfAClass--;
             }
-            classe.computeDC();
 
             classe.getClass_methods().forEach((name,method) -> {
                 method.computeDC();
                 method.computeCC();
                 method.computeBC();
             });
+
+            classe.computeDC();
+            classe.computeWMC();
+            classe.computeBC();
         });
     }
 
