@@ -2,10 +2,13 @@ import java.util.HashMap;
 
 public class Classe extends Methode {
 
+    private int WMC;
+
     private final HashMap<String, Methode> class_methods= new HashMap<>();
 
     public Classe(String name, int start, int end, int javadocLines){
         super(name, start, end, javadocLines);
+        this.WMC = 0;
     }
 
     public void addMethod(String methodName, Methode methode){
@@ -19,4 +22,24 @@ public class Classe extends Methode {
     public Methode getMethod(String name) {
         return class_methods.get(name);
     }
+
+    public void computeWMC(){
+        class_methods.forEach((name, method) ->{
+            WMC = WMC + method.getCC();
+        });
+    }
+
+    public int getWMC() {
+        return WMC;
+    }
+
+    @Override
+    public void computeBC(){
+        if(getWMC() == 0){
+            setBC(0);
+        } else {
+            setBC(getDC() / getWMC());
+        }
+    }
+
 }

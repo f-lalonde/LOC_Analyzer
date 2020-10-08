@@ -14,7 +14,7 @@ public class FichierCSV {
 
         if(classCSV.createNewFile()) {
             classWriter = new FileWriter(classCSV);
-            classWriter.write("chemin, class, classe_LOC, classe_CLOC, classe_DC");
+            classWriter.write("chemin, class, classe_LOC, classe_CLOC, classe_DC, WMC, classe_BC");
         } else {
             classWriter = new FileWriter(classCSV, true);
         }
@@ -31,7 +31,7 @@ public class FichierCSV {
         analyzer.getListClasses().forEach(classe -> {
             try {
                 classWriter.write("\n"+ currentPath+", "+ classe.getName() + ", " + classe.getLOC() +", " +
-                        classe.getCLOC() + ", " + classe.getDC());
+                        classe.getCLOC() + ", " + classe.getDC()+ ", " + classe.getWMC() + ", " + classe.getBC());
             } catch (IOException e) {
                 e.printStackTrace();
             }

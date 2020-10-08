@@ -86,4 +86,8 @@ public class Methode {
     public double getBC() {
         return BC;
     }
+
+    public void setBC(double BC) {
+        this.BC = BC;
+    }
 }
