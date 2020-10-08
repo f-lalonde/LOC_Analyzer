@@ -4,6 +4,10 @@ public class Methode {
     private int CLOC;
     private double DC;
 
+    private int CC;
+    private int noeudPredicat;
+    private double BC;
+
     private final int start;
     private final int end;
 
@@ -14,6 +18,9 @@ public class Methode {
         this.DC = 0;
         this.start = start;
         this.end = end;
+        this.CC = -1;
+        this.noeudPredicat = 0;
+        this.BC = 0;
     }
 
     public void incrementLOC(){
@@ -29,6 +36,22 @@ public class Methode {
             DC = 0;
         } else {
             DC = (double)CLOC / LOC;
+        }
+    }
+
+    public void incrementNoeudPredicat(){
+        noeudPredicat++;
+    }
+
+    public void computeCC(){
+        CC = noeudPredicat+1;
+    }
+
+    public void computeBC(){
+        if(CC == 0){
+            BC = 0;
+        } else {
+            BC = DC/CC;
         }
     }
 
@@ -56,4 +79,11 @@ public class Methode {
         return end;
     }
 
+    public int getCC() {
+        return CC;
+    }
+
+    public double getBC() {
+        return BC;
+    }
 }

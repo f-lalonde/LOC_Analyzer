@@ -2,10 +2,23 @@ import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-// deux façons de faire que je peux voir :
-// 1. Lire ligne par ligne, et anticiper les possibles whitespace dans les regex (option actuellement implémenté)
-// 2. Éliminer le whitespace, tout mettre en un gros bloc mais en préservant les \n et \r, utiliser ceux-ci pour compter les lignes de codes.
-//    Plus besoin d'anticiper le whitespace.
+/* PAR RAPPORT À LA COMPLEXITÉ CYCLOMATIQUE :
+ *
+ * Raisonnement : Tout d'abord, un programme qui n'aurait pas de noeud prédicat aura une CC de 1.
+ * Ensuite, pour chaque présence des expressions suivantes, on va augmenter le nombre de 1 :
+ * if et else if (également sous la forme X? Y:Z) - for - forEach - while - case (mais pas default) - catch - (assert?)
+ *
+ *   HYPOTHÈSE 1 :  Le code est bien formatté et fonctionnel.
+ *
+ *   HYPOTHÈSE 2 :  Étant donné qu'une exception dans un bloc try { ... } catch { ... } ne peut être levé qu'une seule
+ *                  fois par bloc, on va monter le nombre de nœuds prédicats de 1 pour chaque bloc catch.
+ *
+ *  Addendum Michalis Famelis sur hypothèse 2
+ *  (7 septembre, 13h56, channel Question sur Slack) :
+ *              "Il serait bien sur interessant de voir si une telle hypothèse revele des cas plus interessants dans
+ *               JFreechart. Peut-être vous auriez une option de configuration qui l'active et le désactive, et puis
+ *               vous comparez?"  todo : <-- faire ça.
+ */
 
 public class LOC_Analyzer {
     private final ArrayList<Classe> listClasses = new ArrayList<>();
@@ -19,7 +32,7 @@ public class LOC_Analyzer {
     // Patrons regex
 
     private final Pattern classPattern = Pattern.compile(
-            "((public|protected|default|private)?\\s+)?" + "class\\s+[a-zA-Z_$][a-zA-Z0-9_$]*\\s+" +
+            "((public|protected|default|private)?\\s+)?" + "(abstract\\s+)?" + "(class|interface)\\s+[a-zA-Z_$][a-zA-Z0-9_$]*\\s+" +
                     "((extends|implements)\\s+[a-zA-Z_$][a-zA-Z0-9_$]*\\s*)?\\{", Pattern.CASE_INSENSITIVE);
     // à partir d'ici il faut compter les {} pour arriver à quelque chose d'équilibré.
 
@@ -30,23 +43,34 @@ public class LOC_Analyzer {
                     "((public|protected|default|private)\\s+)?" +
                     "(static\\s+)?" +
                     "([a-zA-Z_$][a-zA-Z0-9_$]*\\s*" +
-                        "(<\\s*([a-zA-Z_$]+[a-zA-Z0-9_$]*\\s*,\\s*)*[a-zA-Z_$]+[a-zA-Z0-9_$]*\\s*>\\s+)?" +
-                        "((\\[])*\\s+)?)?" +
+                    "(<\\s*([a-zA-Z_$]+[a-zA-Z0-9_$]*\\s*,\\s*)*[a-zA-Z_$]+[a-zA-Z0-9_$]*\\s*>\\s+)?" +
+                    "((\\[])*\\s+)?)?" +
                     "(?<methodName>[a-zA-Z_$][a-zA-Z0-9_$]*)\\s*" +
                     "\\((?<signature>(\\s*(?<type1>[a-zA-Z_$][a-zA-Z0-9_$]*" +
-                        "(<\\s*([a-zA-Z_$]+[a-zA-Z0-9_$]*\\s*,\\s*)*[a-zA-Z_$]+[a-zA-Z0-9_$]*\\s*>\\s+)?" +
-                        "(\\[])*)\\s+" +
-                        "[a-zA-Z_$][a-zA-Z0-9_$]*\\s*,)*\\s*" +
+                    "(<\\s*([a-zA-Z_$]+[a-zA-Z0-9_$]*\\s*,\\s*)*[a-zA-Z_$]+[a-zA-Z0-9_$]*\\s*>\\s+)?" +
+                    "(\\[])*)\\s+" +
+                    "[a-zA-Z_$][a-zA-Z0-9_$]*\\s*,)*\\s*" +
                     "((?<type2>[a-zA-Z_$][a-zA-Z0-9_$]*" +
-                        "(<\\s*([a-zA-Z_$]+[a-zA-Z0-9_$]*\\s*,\\s*)*[a-zA-Z_$]+[a-zA-Z0-9_$]*\\s*>\\s+)?" +
-                        "((\\[])*\\s+)?)" +
-                        "[a-zA-Z_$][a-zA-Z0-9_$]*))?\\s*\\)" +
+                    "(<\\s*([a-zA-Z_$]+[a-zA-Z0-9_$]*\\s*,\\s*)*[a-zA-Z_$]+[a-zA-Z0-9_$]*\\s*>\\s+)?" +
+                    "((\\[])*\\s+)?)" +
+                    "[a-zA-Z_$][a-zA-Z0-9_$]*))?\\s*\\)" +
                     "(\\s+throws\\s+[a-zA-Z_$][a-zA-Z0-9_$]*)?\\s*\\{", Pattern.CASE_INSENSITIVE);
     // à partir d'ici, il faut compter les {} pour arriver à quelque chose d'équilibré.
 
     private final Pattern methodNameExtracter = Pattern.compile("(?<methodName>[a-zA-Z_$][a-zA-Z0-9_$]*)\\s*\\(([a-zA-Z_$][a-zA-Z0-9_$\\s,<>\\[\\]]*)?\\)");
 
     private final Pattern patternMultiLineCommentonOneLine = Pattern.compile("/\\*.*\\*/");
+
+    private final Pattern patternNoeudPredicat = Pattern.compile("(" +
+            "(?<if>\\s*if(\\s|\\Q(\\E))|" + "(?<ifShortHand>.*\\s*?\\s*.*\\s*:\\s*.*)|" + "(?<for>\\s*for(\\s|\\Q(\\E))|" +
+            "(?<forEach>\\.forEach(\\s|\\Q(\\E))|" + "(?<while>\\s*while(\\s|\\Q(\\E))|" +
+            "(?<case>\\s*case\\s)" + ")", Pattern.CASE_INSENSITIVE);
+
+    private final Pattern patternNoeudPredicatWithCatch = Pattern.compile("(" +
+            "(?<if>\\s*if(\\s|\\Q(\\E))|" + "(?<ifShortHand>.*\\s*?\\s*.*\\s*:\\s*.*)|" + "(?<for>\\s*for(\\s|\\Q(\\E))|" +
+            "(?<forEach>\\.forEach(\\s|\\Q(\\E))|" + "(?<while>\\s*while(\\s|\\Q(\\E))|" +
+            "(?<case>\\s*case\\s)|" + "(?<catch>(\\s*|})catch(\\s|\\Q(\\E))" +
+            ")", Pattern.CASE_INSENSITIVE);
 
     public LOC_Analyzer(ArrayList<String> fileLines) {
         this.fileLines = fileLines;
@@ -63,7 +87,6 @@ public class LOC_Analyzer {
 
         boolean outsideOfAClass = true;
         boolean outsideOfAMethod = true;
-
         int currentClassIndex = 0;
         Methode thisMethode = null;
 
@@ -85,7 +108,9 @@ public class LOC_Analyzer {
                 continue;
             }
 
-            // On empêche la détection dans les strings en amont
+            // On empêche la détection dans les strings, en s'assurant de ne pas capter une mauvaise paire de " ".
+            // Ex : fin de commentaire " multi-ligne */ String oops = "on perd tout ceci";
+            line = line.replaceAll("\".*\\*/", "SafeGuarded! */");
             line = line.replaceAll("\".*\"", "\"replacedString\" ");
 
             /* On vérifie d'abord si on est à l'intérieur d'un commentaire multi-ligne.
@@ -106,9 +131,6 @@ public class LOC_Analyzer {
                     } else {
                         singleCommentFound = true;
                     }
-
-                    mlCommentFound = false;
-                    javaDocfound = false;
 
                 } else {
                     if (outsideOfAClass || outsideOfAMethod) {
@@ -149,7 +171,7 @@ public class LOC_Analyzer {
                 line = line.replaceAll("//.*", "");
             }
 
-                // tableau de 3 booléens, représentant : 0 - singleCommentFound, 1 - mlCommentFound, 2 - javaDocfound
+            // tableau de 3 booléens, représentant : 0 - singleCommentFound, 1 - mlCommentFound, 2 - javaDocfound
             boolean[] values = findMultiLineComment(line);
 
             // mise à jour des lignes, selon ce qui fut trouvé
@@ -188,6 +210,13 @@ public class LOC_Analyzer {
                     if (!outsideOfAMethod) {
                         assert thisMethode != null : "On a détecté que l'on est dans une méthode, mais aucune méthode n'a été chargée.";
                         thisMethode.incrementLOC();
+
+                        // On en profite au passage pour vérifier la présence d'un noeud prédicat :
+                        Matcher matcherNoeudPredicat = patternNoeudPredicat.matcher(line);
+                        while(matcherNoeudPredicat.find()) {
+                            thisMethode.incrementNoeudPredicat();
+
+                        }
                     }
                 }
             }
@@ -207,12 +236,14 @@ public class LOC_Analyzer {
 
             classe.getClass_methods().forEach((name,method) -> {
                 method.computeDC();
+                method.computeCC();
+                method.computeBC();
             });
         });
     }
 
     /**
-     * Vérifie si la ligne est une déclaration de classe. Si oui, on crée un instance de Classe et on l'ajoute au
+     * Vérifie si la ligne est une déclaration de classe. Si oui, on crée un instance de com.francislalonde.Classe et on l'ajoute au
      * hashmap listClasses. Sinon, il ne se passe rien.
      * Agit par effet de bord.
      * @param line contenu de la ligne actuelle
@@ -238,7 +269,7 @@ public class LOC_Analyzer {
     }
 
     /**
-     * Vérifie si la ligne est une déclaration de méthode. Si oui, on crée une instance de Methode et on l'associe à la
+     * Vérifie si la ligne est une déclaration de méthode. Si oui, on crée une instance de com.francislalonde.Methode et on l'associe à la
      * classe dans laquelle elle se trouve. On met également à jour la variable String "currentMethod", qui aura le nom
      * et la signature de la méthode que nous venons de détecter.
      * Sinon, il ne se passe rien.

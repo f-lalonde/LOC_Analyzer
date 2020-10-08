@@ -1,5 +1,3 @@
-//Classe pour créer un fichier CSV
-
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -16,14 +14,14 @@ public class FichierCSV {
 
         if(classCSV.createNewFile()) {
             classWriter = new FileWriter(classCSV);
-            classWriter.write("chemin, class, classe_LOC, classe_CLOC, classe_DC\n");
+            classWriter.write("chemin, class, classe_LOC, classe_CLOC, classe_DC");
         } else {
             classWriter = new FileWriter(classCSV, true);
         }
 
         if(methodCSV.createNewFile()){
             methodWriter = new FileWriter(methodCSV);
-            methodWriter.write("chemin, class, methode, methode_LOC, methode_CLOC, methode_DC\n");
+            methodWriter.write("chemin, class, methode, methode_LOC, methode_CLOC, methode_DC, CC, methode_BC");
         } else {
             methodWriter = new FileWriter(methodCSV, true);
         }
@@ -31,16 +29,17 @@ public class FichierCSV {
         String currentPath = file.getAbsolutePath();
 
         analyzer.getListClasses().forEach(classe -> {
-            classe.computeDC();
             try {
-                classWriter.write(currentPath+", "+ classe.getName() + ", " + classe.getLOC() +", " + classe.getCLOC() + ", " + classe.getDC() + "\n");
+                classWriter.write("\n"+ currentPath+", "+ classe.getName() + ", " + classe.getLOC() +", " +
+                        classe.getCLOC() + ", " + classe.getDC());
             } catch (IOException e) {
                 e.printStackTrace();
             }
             classe.getClass_methods().forEach((methodName, method) -> {
-                method.computeDC();
                 try {
-                    methodWriter.write(currentPath + ", " + classe.getName() + ", " + methodName + ", " + method.getLOC() +", " + method.getCLOC() + ", " + method.getDC() + "\n");
+                    methodWriter.write("\n"+ currentPath + ", " + classe.getName() + ", " + methodName + ", " +
+                            method.getLOC() +", " + method.getCLOC() + ", " + method.getDC() + ", " + method.getCC() +
+                            ", " + method.getBC());
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
