@@ -32,15 +32,15 @@ public class LOC_Analyzer {
     // Patrons regex
 
     private final Pattern classPattern = Pattern.compile(
-            "((public|protected|default|private)?\\s+)?" + "(abstract\\s+)?" + "(class|interface)\\s+[a-zA-Z_$][a-zA-Z0-9_$]*\\s+" +
-                    "((extends|implements)\\s+[a-zA-Z_$][a-zA-Z0-9_$]*\\s*(,\\s*[a-zA-Z_$][a-zA-Z0-9_$]*)*?)?\\s*\\{", Pattern.CASE_INSENSITIVE);
+            "(\\b(public|protected|default|private)\\b?\\s+)?" + "(\\babstract\\b\\s+)?" + "(\\b(class|interface|enum)\\b)\\s+[a-zA-Z_$][a-zA-Z0-9_$]*(\\s*<.*>)?" +
+                    "(\\s+(extends|implements)\\s+[a-zA-Z_$][a-zA-Z0-9_$.]*(\\s*<.*>)?\\s*(,\\s*[a-zA-Z_$][a-zA-Z0-9_$]*(\\s*<.*>)?)*?)*?\\s*\\{");
     // à partir d'ici il faut compter les {} pour arriver à quelque chose d'équilibré.
 
     // ce Pattern est dégueulasse, je sais. Il y a surement moyen de faire mieux.
     // J'ai tenté de le rendre "lisible", autant que possible...
     private final Pattern methodPattern = Pattern.compile(
             "^(?!\\s*(catch|while|if|for|switch))\\s*" +
-                    "((public|protected|default|private)\\s+)?" +
+                    "(\\b(public|protected|default|private)\\b\\s+)?" +
                     "(static\\s+)?" +
                     "([a-zA-Z_$][a-zA-Z0-9_$]*\\s*" +
                     "(<\\s*([a-zA-Z_$]+[a-zA-Z0-9_$]*\\s*,\\s*)*[a-zA-Z_$]+[a-zA-Z0-9_$]*\\s*>\\s+)?" +
@@ -54,10 +54,19 @@ public class LOC_Analyzer {
                     "(<\\s*([a-zA-Z_$]+[a-zA-Z0-9_$]*\\s*,\\s*)*[a-zA-Z_$]+[a-zA-Z0-9_$]*\\s*>\\s+)?" +
                     "((\\[])*\\s+)?)" +
                     "[a-zA-Z_$][a-zA-Z0-9_$]*))?\\s*\\)" +
-                    "(\\s+throws\\s+[a-zA-Z_$][a-zA-Z0-9_$]*)?\\s*\\{", Pattern.CASE_INSENSITIVE);
+                    "(\\s+throws\\s+[a-zA-Z_$][a-zA-Z0-9_$]*)?\\s*\\{");
     // à partir d'ici, il faut compter les {} pour arriver à quelque chose d'équilibré.
 
-    private final Pattern methodNameExtracter = Pattern.compile("(?<methodName>[a-zA-Z_$][a-zA-Z0-9_$]*)\\s*\\(([a-zA-Z_$][a-zA-Z0-9_$\\s,<>\\[\\]]*)?\\)");
+    private final Pattern methodPartialMatch = Pattern.compile("^(?!\\s*(catch|while|if|for|switch))\\s*" +
+            "((public|protected|default|private)\\s+)?" +
+            "(static\\s+)?" +
+            "([a-zA-Z_$][a-zA-Z0-9_$]*\\s*" +
+            "(<\\s*([a-zA-Z_$]+[a-zA-Z0-9_$]*\\s*,\\s*)*[a-zA-Z_$]+[a-zA-Z0-9_$]*\\s*>\\s+)?" +
+            "((\\[])*\\s+)?)?" +
+            "(?<methodName>[a-zA-Z_$][a-zA-Z0-9_$]*)\\s*" +
+            "\\(");
+
+    private final Pattern methodNameExtracter = Pattern.compile("(?<methodName>[a-zA-Z_$][a-zA-Z0-9_$]*)\\s*\\(\\s*([a-zA-Z_$][a-zA-Z0-9_$\\s,<>\\[\\]]*)?\\)");
 
     private final Pattern patternMultiLineCommentonOneLine = Pattern.compile("/\\*.*\\*/");
 
@@ -150,14 +159,24 @@ public class LOC_Analyzer {
 
             // Détection des classes et des méthodes
 
-            if (classMatcher(line, i)) {    //  <--- il y a des effets de bords ici.
+            // Gère les cas où la déclaration est séparée sur deux lignes. Pour l'instant, on juge que sur trois lignes
+            // serait exagéré... mais qui sait, peut-être?
+            String checkIfOnMultipleLines = line;
+            if(fileLines.size() > i +3){
+                checkIfOnMultipleLines = checkIfOnMultipleLines.concat(fileLines.get(i+1)).concat(fileLines.get(i+2)).concat(fileLines.get(i+3)).replaceAll("[\n\r\t]", "");
+            }
+
+            if (classMatcher(line, i) || (line.contains("class") && classMatcher(checkIfOnMultipleLines, i))) {    //  <--- il y a des effets de bords ici.
                 outsideOfAClass = false;
                 currentClassIndex = listClasses.size() - 1;
+
             } else if (!listClasses.isEmpty() && i > listClasses.get(currentClassIndex).getEnd()) {
                 outsideOfAClass = true;
             }
 
-            if (methodMatcher(line, i)) {   //  <--- il y a des effets de bords ici.
+            Matcher partialMethodMatcher = methodPartialMatch.matcher(line);
+
+            if (methodMatcher(line, i) || (partialMethodMatcher.find() && methodMatcher(checkIfOnMultipleLines, i))) {   //  <--- il y a des effets de bords ici.
                 outsideOfAMethod = false;
                 thisMethode = listClasses.get(currentClassIndex).getMethod(currentMethod);
             } else if (thisMethode != null && i > thisMethode.getEnd()) {
@@ -256,8 +275,10 @@ public class LOC_Analyzer {
      */
     private boolean classMatcher(String line, int currentLine){
         Matcher classMatcher = classPattern.matcher(line);
+
         if (classMatcher.find()) {
-            String className = classMatcher.group().replaceAll(".*class\\s+", "").split(" ")[0];
+            String className = classMatcher.group().replaceAll(".*(class|interface|enum)\\s+", "").split(" ")[0];
+
             int classEnd = findBalancedCurlyBracket(currentLine, fileLines);
 
             if(javadocLines > 0){
@@ -283,6 +304,7 @@ public class LOC_Analyzer {
      * @return vrai si on a trouvé une méthode
      */
     private boolean methodMatcher(String line, int currentLine){
+
         Matcher methodMatcher = methodPattern.matcher(line);
         if (methodMatcher.find()) {
             Matcher methodNameMatcher = methodNameExtracter.matcher(methodMatcher.group());
@@ -329,6 +351,7 @@ public class LOC_Analyzer {
      */
     private int findBalancedCurlyBracket(int startAtLine, ArrayList<String> fileLines) {
         int bracketCount = 0;
+        boolean started = false;
         for(int i = startAtLine; i<fileLines.size();++i){
             String line = fileLines.get(i);
             if(line.isBlank()){
@@ -343,11 +366,12 @@ public class LOC_Analyzer {
             for(int j = 0; j<line.length(); j++){
                 if(line.charAt(j) == '{'){
                     bracketCount++;
+                    started = true;
                 } else if(line.charAt(j) == '}'){
                     bracketCount--;
                 }
             }
-            if(bracketCount == 0){
+            if(bracketCount == 0 && started){
                 return i;
             }
         }
