@@ -1,3 +1,5 @@
+package com.francislalonde;
+
 import java.util.HashMap;
 
 public class Classe extends Methode {
@@ -9,6 +11,7 @@ public class Classe extends Methode {
     public Classe(String name, int start, int end, int javadocLines){
         super(name, start, end, javadocLines);
         this.WMC = 0;
+
     }
 
     public void addMethod(String methodName, Methode methode){
@@ -24,9 +27,7 @@ public class Classe extends Methode {
     }
 
     public void computeWMC(){
-        class_methods.forEach((name, method) ->{
-            WMC = WMC + method.getCC();
-        });
+        class_methods.forEach((name, method) -> WMC = WMC + method.getCC());
     }
 
     public int getWMC() {
@@ -36,10 +37,10 @@ public class Classe extends Methode {
     @Override
     public void computeBC(){
         if(getWMC() == 0){
-            setBC(0);
+            setBC(-1);
         } else {
             setBC(getDC() / getWMC());
         }
     }
-
 }
+
