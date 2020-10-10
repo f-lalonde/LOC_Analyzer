@@ -1,7 +1,9 @@
 # LOC_Analyzer
-TP1 - Métrique
-Dans le cadre du cours IFT-3913
-Professeur : Michalis Famelis
+TP1 - Métrique  
+Dans le cadre du cours IFT-3913  
+Professeur : Michalis Famelis  
+
+Note quant au devoir : La version Maven avait été démarrée en test, puis développée comme source principale. Vous trouverez l'historique des commits ici : https://github.com/pticrix/Analyzer
 
 ## Description
 Ce programme analyse tous les fichiers java se trouvant dans un dossier ainsi que ces sous-dossiers, et en extrait des informations à partir des classes et des méthodes s'y trouvant. 
@@ -41,6 +43,8 @@ Il suffit de déplacer le fichier Analyzer-1.0-SNAPSHOT.jar dans le dossier sour
       `java -jar ./Analyzer-1.0-SNAPSHOT.jar`
       (Cela requiert d'avoir java dans le PATH)
   3. En utilisant l'utilitaire run.bat, que vous trouverez dans le dossier source de ce projet-ci. Il doit être placé dans le même dossier que Analyzer-1.0-SNAPSHOT.jar. Cet utilitaire ouvrira une invite de commande qui vous laissera savoir quand le travail est terminé. 
+
+Le .jar exécutable et l'utilitaire run.bat se trouvent dans le dossier "util"
 
 L'exécution du fichier produira deux fichiers dans le dossier source du projet analysé : 
   1. classes.csv   - Il contient les informations relatives à toutes les classes découvertes dans le projet
