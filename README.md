@@ -38,7 +38,7 @@ Les informations recueillies et calculées seront exportées dans des fichiers .
 **Depuis le .jar exécutable** : 
 
 Il suffit de déplacer le fichier Analyzer-1.0-SNAPSHOT.jar dans le dossier source du projet à analyser. Ensuite vous avez trois choix :
-  1. Double cliquer sur le fichier pour l'exécuter. Il faudra faire attention, car il n'y a rien pour vous dire quand le travail est terminer. Il faudra regarder les processus.
+  1. Double cliquer sur le fichier pour l'exécuter. Il faudra faire attention, car il n'y a rien pour vous dire quand le travail est terminé. Il faudra regarder les processus.
   2. Démarrer le fichier depuis l'invite de commande à l'aide de la commande suivante :  
       `java -jar ./Analyzer-1.0-SNAPSHOT.jar`  
       (Cela requiert d'avoir java dans le PATH)
@@ -51,7 +51,7 @@ L'exécution du fichier produira deux fichiers dans le dossier source du projet 
   2. methodes.csv  - Il contient les informations relatives à toutes les méthodes découvertes dans le projet
 
 
-Pour toute question, veuiller contacter francis.lalonde@umontreal.ca
+Pour toute question, veuillez contacter francis.lalonde@umontreal.ca
 
 Merci de votre intérêt :)
 
