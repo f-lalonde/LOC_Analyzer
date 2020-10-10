@@ -7,9 +7,10 @@ Professeur : Michalis Famelis
 **Depuis IntelliJ** : 
   1   - Cloner le Git
   2  - S'assurer que les dépendances soient bien vues par Maven (il se peut que vous deviez exécuter le goal "install" dans le menu de Maven. Cela va télécharger et appliquer les dépendances)
-  3.a) - Exécuter la configuration "Main" pour exécuter le logiciel, ce qui compilera les informations pour le code lui-même
-  3.b) - Exécuter la configuration "Tests" pour rouler les tests unitaires
-  3.c) - Exécuter la configuration "Rebuild JAR" afin de générer un .jar exécutable.
+  3 - Exécuter la configuration :
+    1. "Main" pour exécuter le logiciel, ce qui compilera les informations pour le code lui-même
+    2. "Tests" pour rouler les tests unitaires
+    3. "Rebuild JAR" afin de générer un .jar exécutable.
   
 **Depuis le .jar exécutable** : 
 
