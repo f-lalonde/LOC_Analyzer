@@ -39,8 +39,8 @@ Les informations recueillies et calculées seront exportées dans des fichiers .
 
 Il suffit de déplacer le fichier Analyzer-1.0-SNAPSHOT.jar dans le dossier source du projet à analyser. Ensuite vous avez trois choix :
   1. Double cliquer sur le fichier pour l'exécuter. Il faudra faire attention, car il n'y a rien pour vous dire quand le travail est terminer. Il faudra regarder les processus.
-  2. Démarrer le fichier depuis l'invite de commande à l'aide de la commande suivante : 
-      `java -jar ./Analyzer-1.0-SNAPSHOT.jar`
+  2. Démarrer le fichier depuis l'invite de commande à l'aide de la commande suivante :  
+      `java -jar ./Analyzer-1.0-SNAPSHOT.jar`  
       (Cela requiert d'avoir java dans le PATH)
   3. En utilisant l'utilitaire run.bat, que vous trouverez dans le dossier source de ce projet-ci. Il doit être placé dans le même dossier que Analyzer-1.0-SNAPSHOT.jar. Cet utilitaire ouvrira une invite de commande qui vous laissera savoir quand le travail est terminé. 
 
