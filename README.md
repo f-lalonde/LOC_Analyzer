@@ -3,7 +3,28 @@ TP1 - Métrique
 Dans le cadre du cours IFT-3913
 Professeur : Michalis Famelis
 
-## Pour faire fonctionner :
+## Description
+Ce programme analyse tous les fichiers java se trouvant dans un dossier ainsi que ces sous-dossiers, et en extrait des informations à partir des classes et des méthodes s'y trouvant. 
+
+Les informations recueillies et calculées seront exportées dans des fichiers .csv, pouvant ensuite être importées dans le tabulateur de votre choix. 
+
+### Les informations sur les classes sont les suivantes : 
+- Chemin d'accès du fichier dans lequel se trouve la classe
+- Nom de la classe
+- classe_LOC : nombre de lignes de code d’une classe
+- classe_CLOC : nombre de lignes de code d’une classe qui contiennent des commentaires
+- classe_DC : densité de commentaires pour une classe : classe_DC = classe_CLOC / classe_LOC
+- WMC : « Weighted Methods per Class », pour chaque classe. i.e. la somme pondérée des complexités des méthodes d'une classe. 
+- classe_BC : degré selon lequel une classe est bien commentée classe_BC = classe_DC / WMC
+
+### Les informations sur les méthodes sont les suivantes :
+- methode_LOC : nombre de lignes de code d’une méthode
+- methode_CLOC : nombre de lignes de code d’une méthode qui contiennent des commentaires
+- methode_DC : densité de commentaires pour une méthode : methode_DC = methode_CLOC / methode_LOC
+- CC : complexité cyclomatique de McCabe pour chaque méthode
+- methode_BC : degré selon lequel une méthode est bien commentée methode_BC = methode_DC / CC
+
+## Pour faire fonctionner le programme :
 **Depuis IntelliJ** : 
 1.  Cloner le Git
 2.  S'assurer que les dépendances soient bien vues par Maven (il se peut que vous deviez exécuter le goal "install" dans le menu de Maven. Cela va télécharger et appliquer les dépendances)
@@ -26,7 +47,7 @@ L'exécution du fichier produira deux fichiers dans le dossier source du projet 
   2. methodes.csv  - Il contient les informations relatives à toutes les méthodes découvertes dans le projet
 
 
-Pour toute question, veuiller contacter francis.lalonde@umontrea.ca
+Pour toute question, veuiller contacter francis.lalonde@umontreal.ca
 
 Merci de votre intérêt :)
 
