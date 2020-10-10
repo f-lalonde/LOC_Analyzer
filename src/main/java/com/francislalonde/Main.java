@@ -1,7 +1,20 @@
+/*
+TP1 - Métriques
+IFT-3913
+Francis Lalonde
+Charlotte de Lanauze
+ */
+
+package com.francislalonde;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 
+//todo : Gérer les classes imbriquées.
+//todo : vérifier que les commentaires sont bien assignés
+//todo : fais des tests dammit!
+//todo : @Override et autres ( regex : @.*/b) En théorie, devrait être assigné à la méthode qui le suit.
 public class Main {
     public static void main(String[] args) {
 

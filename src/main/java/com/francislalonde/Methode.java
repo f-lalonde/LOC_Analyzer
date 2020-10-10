@@ -1,3 +1,5 @@
+package com.francislalonde;
+
 public class Methode {
     private final String name;
     private int LOC;
@@ -18,7 +20,7 @@ public class Methode {
         this.DC = 0;
         this.start = start;
         this.end = end;
-        this.CC = -1;
+        this.CC = 0;
         this.noeudPredicat = 0;
         this.BC = 0;
     }
@@ -33,7 +35,7 @@ public class Methode {
 
     public void computeDC(){
         if(LOC == 0){
-            DC = 0;
+            DC = -1;
         } else {
             DC = (double)CLOC / LOC;
         }
@@ -49,7 +51,7 @@ public class Methode {
 
     public void computeBC(){
         if(CC == 0){
-            BC = 0;
+            BC = -1;
         } else {
             BC = DC/CC;
         }
