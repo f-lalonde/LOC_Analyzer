@@ -4,7 +4,7 @@ Dans le cadre du cours IFT-3913
 Professeur : Michalis Famelis  
 Remis le 9 octobre 2020  
 
-Note quant au devoir : La version Maven avait été démarrée en test, puis développée comme source principale. Vous trouverez l'historique des commits ici : https://github.com/pticrix/Analyzer
+Note quant au devoir : La version Maven avait été démarrée en test, puis développée comme source principale. Vous trouverez l'historique des commits ici : https://github.com/f-lalonde/Analyzer
 
 ## Description
 Ce programme analyse tous les fichiers java se trouvant dans un dossier ainsi que ces sous-dossiers, et en extrait des informations à partir des classes et des méthodes s'y trouvant. 
